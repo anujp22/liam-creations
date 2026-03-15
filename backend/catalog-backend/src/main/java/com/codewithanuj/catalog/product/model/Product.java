@@ -1,4 +1,4 @@
-package com.codewithanuj.product.model;
+package com.codewithanuj.catalog.product.model;
 
 import java.math.BigDecimal;
 

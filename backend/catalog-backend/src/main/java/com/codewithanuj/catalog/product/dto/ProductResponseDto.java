@@ -1,6 +1,6 @@
-package com.codewithanuj.product.dto;
+package com.codewithanuj.catalog.product.dto;
 
-import com.codewithanuj.product.model.ProductStatus;
+import com.codewithanuj.catalog.product.model.ProductStatus;
 
 import java.math.BigDecimal;
 

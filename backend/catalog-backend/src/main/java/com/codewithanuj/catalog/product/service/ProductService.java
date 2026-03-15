@@ -1,8 +1,8 @@
-package com.codewithanuj.product.service;
+package com.codewithanuj.catalog.product.service;
 
-import com.codewithanuj.product.dto.ProductResponseDto;
-import com.codewithanuj.product.model.Product;
-import com.codewithanuj.product.model.ProductStatus;
+import com.codewithanuj.catalog.product.dto.ProductResponseDto;
+import com.codewithanuj.catalog.product.model.Product;
+import com.codewithanuj.catalog.product.model.ProductStatus;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;

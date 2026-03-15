@@ -1,4 +1,4 @@
-package com.codewithanuj.product.model;
+package com.codewithanuj.catalog.product.model;
 
 public enum ProductStatus {
     IN_STOCK,

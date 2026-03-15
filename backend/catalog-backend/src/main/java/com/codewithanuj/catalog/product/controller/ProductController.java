@@ -1,8 +1,8 @@
-package com.codewithanuj.product.controller;
+package com.codewithanuj.catalog.product.controller;
 
-import com.codewithanuj.product.dto.ProductResponseDto;
-import com.codewithanuj.product.model.ProductStatus;
-import com.codewithanuj.product.service.ProductService;
+import com.codewithanuj.catalog.product.dto.ProductResponseDto;
+import com.codewithanuj.catalog.product.model.ProductStatus;
+import com.codewithanuj.catalog.product.service.ProductService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
