@@ -2,20 +2,29 @@ You are helping build a full-stack catalog website.
 
 Tech Stack
 Backend: Java + Spring Boot
-Frontend: React
+Frontend: React (Vite + TypeScript)
 Build Tool: Maven
-Database: MySQL (later)
-Deployment: AWS (later)
+Database: MySQL / PostgreSQL (later)
+Infrastructure: AWS (S3, CloudFront, ECS/Docker)
 
 Project Goal
-Create a catalog website that lists products and redirects users to Instagram to purchase.
+Create a catalog website that:
+- Displays products
+- Shows availability
+- Redirects users to Instagram to purchase
 
 Development Guidelines
 - Keep code beginner-friendly
-- Explain Spring Boot annotations briefly
+- Explain concepts clearly
 - Follow clean architecture
 - Prefer small simple files
-- Use REST conventions
+- Use REST API conventions
+
+Full-Stack Awareness
+- Backend exposes REST APIs
+- Frontend (React) will consume APIs
+- Database will store product data
+- AWS will host backend, frontend, and images
 
 TOKEN OPTIMIZATION RULES
 - Do NOT repeat existing code unless required

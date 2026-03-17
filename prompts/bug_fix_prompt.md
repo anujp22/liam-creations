@@ -16,6 +16,10 @@ Requirements
 - Fix with minimal changes
 - Do not rewrite full files
 
+Learning Requirement
+- Explain why the bug happened
+- Explain how to avoid it in future
+
 Token Rules
 - Only show changed sections
 
