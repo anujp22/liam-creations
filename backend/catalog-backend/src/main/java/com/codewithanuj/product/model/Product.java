@@ -1,17 +1,30 @@
 package com.codewithanuj.product.model;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+
 import java.math.BigDecimal;
 
+@Entity
+@Table(name = "products")
 public class Product {
 
-    private final String productNumber;
-    private final String title;
-    private final String description;
-    private final BigDecimal price;
-    private final String currency;
-    private final ProductStatus status;
-    private final boolean featured;
-    private final String instagramPostUrl;
+    @Id
+    private String productNumber;
+    private String title;
+    private String description;
+    private BigDecimal price;
+    private String currency;
+    @Enumerated(EnumType.STRING)
+    private ProductStatus status;
+    private boolean featured;
+    private String instagramPostUrl;
+
+    protected Product() {
+    }
 
     public Product(
             String productNumber,
