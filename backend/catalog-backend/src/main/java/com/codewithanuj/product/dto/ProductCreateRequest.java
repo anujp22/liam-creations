@@ -1,0 +1,17 @@
+package com.codewithanuj.product.dto;
+
+import com.codewithanuj.product.model.ProductStatus;
+
+import java.math.BigDecimal;
+
+public record ProductCreateRequest(
+        String productNumber,
+        String title,
+        String description,
+        BigDecimal price,
+        String currency,
+        ProductStatus status,
+        boolean featured,
+        String instagramPostUrl
+) {
+}
