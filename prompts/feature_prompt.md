@@ -6,9 +6,10 @@ Feature Description
 [DESCRIBE FEATURE]
 
 Requirements
-- Use Spring Boot best practices
-- Keep the implementation simple
+- Follow full-stack best practices
+- Keep implementation simple
 - Add comments for learning
+- Consider how frontend will use this API
 
 Token Rules
 - Only show changed code

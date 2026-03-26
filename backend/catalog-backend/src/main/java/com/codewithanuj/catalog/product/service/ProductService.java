@@ -3,6 +3,7 @@ package com.codewithanuj.catalog.product.service;
 import com.codewithanuj.catalog.product.dto.ProductResponseDto;
 import com.codewithanuj.catalog.product.model.Product;
 import com.codewithanuj.catalog.product.model.ProductStatus;
+import com.codewithanuj.catalog.product.repository.ProductRepository;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -12,24 +13,42 @@ import java.util.Optional;
 @Service
 public class ProductService {
 
+    private final ProductRepository productRepository;
+
+    public ProductService() {
+        this.productRepository = null;
+    }
+
+    public ProductService(ProductRepository productRepository) {
+        this.productRepository = productRepository;
+    }
+
     public List<ProductResponseDto> getAllProducts() {
-        return getMockProducts().stream()
+        return getProducts().stream()
                 .map(this::toDto)
                 .toList();
     }
 
     public List<ProductResponseDto> getProductsByStatus(ProductStatus status) {
-        return getMockProducts().stream()
+        return getProducts().stream()
                 .filter(product -> product.getStatus() == status)
                 .map(this::toDto)
                 .toList();
     }
 
     public Optional<ProductResponseDto> getProductByProductNumber(String productNumber) {
-        return getMockProducts().stream()
+        return getProducts().stream()
                 .filter(product -> product.getProductNumber().equalsIgnoreCase(productNumber))
                 .findFirst()
                 .map(this::toDto);
+    }
+
+    private List<Product> getProducts() {
+        if (productRepository != null) {
+            return productRepository.findAll();
+        }
+
+        return getMockProducts();
     }
 
     private List<Product> getMockProducts() {

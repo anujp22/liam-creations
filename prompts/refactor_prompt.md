@@ -4,12 +4,16 @@ Refactor the following code.
 
 Goals
 - Improve readability
-- Follow Spring Boot conventions
+- Follow clean architecture
+- Align with full-stack best practices
 - Reduce unnecessary complexity
 
 Constraints
 - Do not change functionality
 - Keep beginner friendly
+
+Learning Requirement
+- Explain what improved and why
 
 Token Rules
 - Only show modified sections
