@@ -60,6 +60,17 @@ class ProductControllerTest {
     }
 
     @Test
+    void getProductsReturnsBadRequestWhenStatusIsInvalid() throws Exception {
+        mockMvc.perform(get("/api/products")
+                        .param("status", "INVALID_STATUS"))
+                .andExpect(status().isBadRequest())
+                .andExpect(contentTypeJson())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("Invalid value for 'status': INVALID_STATUS"))
+                .andExpect(jsonPath("$.path").value("/api/products"));
+    }
+
+    @Test
     void getProductReturnsSingleProductWhenProductNumberExists() throws Exception {
         productService.singleProduct = Optional.of(
                 createProduct("PRD-001", ProductStatus.IN_STOCK)
@@ -77,7 +88,11 @@ class ProductControllerTest {
         productService.singleProduct = Optional.empty();
 
         mockMvc.perform(get("/api/products/PRD-999"))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound())
+                .andExpect(contentTypeJson())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.message").value("Product not found: PRD-999"))
+                .andExpect(jsonPath("$.path").value("/api/products/PRD-999"));
     }
 
     private ProductResponseDto createProduct(String productNumber, ProductStatus status) {
