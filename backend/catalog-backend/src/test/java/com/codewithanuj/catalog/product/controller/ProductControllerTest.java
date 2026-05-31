@@ -71,6 +71,27 @@ class ProductControllerTest {
     }
 
     @Test
+    void getProductsReturnsBadRequestWithErrorFieldWhenStatusIsInvalid() throws Exception {
+        mockMvc.perform(get("/api/products")
+                        .param("status", "INVALID_STATUS"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Bad Request"))
+                .andExpect(jsonPath("$.timestamp").isNotEmpty());
+    }
+
+    @Test
+    void getProductsReturnsAllProductsWhenStatusIsEmptyString() throws Exception {
+        productService.allProducts = List.of(
+                createProduct("PRD-001", ProductStatus.IN_STOCK)
+        );
+
+        mockMvc.perform(get("/api/products")
+                        .param("status", ""))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1));
+    }
+
+    @Test
     void getProductReturnsSingleProductWhenProductNumberExists() throws Exception {
         productService.singleProduct = Optional.of(
                 createProduct("PRD-001", ProductStatus.IN_STOCK)
