@@ -1,0 +1,142 @@
+package com.codewithanuj.catalog.shared.exception;
+
+import com.codewithanuj.catalog.product.dto.ProductCreateRequest;
+import com.codewithanuj.catalog.product.service.ProductService;
+import jakarta.validation.Valid;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+
+import static org.hamcrest.Matchers.containsString;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@WebMvcTest
+@Import(ValidationExceptionHandlerTest.TestConfig.class)
+class ValidationExceptionHandlerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    // ProductController is loaded by @WebMvcTest and requires ProductService
+    @MockBean
+    private ProductService productService;
+
+    // Registers TestController as a bean so Spring MVC can discover its @PostMapping
+    @TestConfiguration
+    static class TestConfig {
+        @Bean
+        public TestController testController() {
+            return new TestController();
+        }
+    }
+
+    // Test-only controller — triggers @Valid on ProductCreateRequest
+    @RestController
+    static class TestController {
+        @PostMapping("/test/products")
+        public String create(@Valid @RequestBody ProductCreateRequest request) {
+            return "ok";
+        }
+    }
+
+    @Test
+    void returnsValidationErrorWhenProductNumberIsMissing() throws Exception {
+        String body = """
+                {
+                  "title": "Clay Mug",
+                  "description": "Nice mug",
+                  "price": 24.99,
+                  "currency": "USD",
+                  "status": "IN_STOCK",
+                  "featured": true,
+                  "instagramPostUrl": "https://instagram.com/p/001"
+                }
+                """;
+
+        mockMvc.perform(post("/test/products")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Bad Request"))
+                .andExpect(jsonPath("$.message").value(containsString("productNumber")))
+                .andExpect(jsonPath("$.timestamp").isNotEmpty());
+    }
+
+    @Test
+    void returnsValidationErrorWhenProductNumberPatternIsWrong() throws Exception {
+        String body = """
+                {
+                  "productNumber": "ABC-999",
+                  "title": "Clay Mug",
+                  "description": "Nice mug",
+                  "price": 24.99,
+                  "currency": "USD",
+                  "status": "IN_STOCK",
+                  "featured": true,
+                  "instagramPostUrl": "https://instagram.com/p/001"
+                }
+                """;
+
+        mockMvc.perform(post("/test/products")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value(containsString("PRD-001")));
+    }
+
+    @Test
+    void returnsValidationErrorWhenTitleIsMissing() throws Exception {
+        String body = """
+                {
+                  "productNumber": "PRD-001",
+                  "description": "Nice mug",
+                  "price": 24.99,
+                  "currency": "USD",
+                  "status": "IN_STOCK",
+                  "featured": true,
+                  "instagramPostUrl": "https://instagram.com/p/001"
+                }
+                """;
+
+        mockMvc.perform(post("/test/products")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(containsString("title")));
+    }
+
+    @Test
+    void returnsValidationErrorWhenPriceIsTooLow() throws Exception {
+        String body = """
+                {
+                  "productNumber": "PRD-001",
+                  "title": "Clay Mug",
+                  "description": "Nice mug",
+                  "price": 0.00,
+                  "currency": "USD",
+                  "status": "IN_STOCK",
+                  "featured": true,
+                  "instagramPostUrl": "https://instagram.com/p/001"
+                }
+                """;
+
+        mockMvc.perform(post("/test/products")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(containsString("price must be greater than 0")));
+    }
+}
