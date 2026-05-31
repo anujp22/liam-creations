@@ -9,14 +9,14 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.time.Instant;
+import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(ResponseStatusException.class)
-    public ResponseEntity<Map<String, Object>> handleResponseStatusException(
+    public ResponseEntity<ApiErrorResponse> handleResponseStatusException(
             ResponseStatusException exception,
             HttpServletRequest request
     ) {
@@ -28,7 +28,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    public ResponseEntity<Map<String, Object>> handleMethodArgumentTypeMismatch(
+    public ResponseEntity<ApiErrorResponse> handleMethodArgumentTypeMismatch(
             MethodArgumentTypeMismatchException exception,
             HttpServletRequest request
     ) {
@@ -41,15 +41,34 @@ public class GlobalExceptionHandler {
         );
     }
 
-    private ResponseEntity<Map<String, Object>> buildErrorResponse(
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiErrorResponse> handleMethodArgumentNotValid(
+            MethodArgumentNotValidException exception,
+            HttpServletRequest request
+    ) {
+        String message = exception.getBindingResult().getFieldErrors().stream()
+                .map(e -> e.getField() + ": " + e.getDefaultMessage())
+                .collect(Collectors.joining(", "));
+
+        return buildErrorResponse(
+                HttpStatus.BAD_REQUEST,
+                message,
+                request.getRequestURI()
+        );
+    }
+
+    private ResponseEntity<ApiErrorResponse> buildErrorResponse(
             HttpStatus status,
             String message,
             String path
     ) {
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("status", status.value());
-        body.put("message", message);
-        body.put("path", path);
+        ApiErrorResponse body = new ApiErrorResponse(
+                Instant.now().toString(),
+                status.value(),
+                status.getReasonPhrase(),
+                message,
+                path
+        );
 
         return ResponseEntity.status(status).body(body);
     }
