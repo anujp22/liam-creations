@@ -1,10 +1,13 @@
 package com.codewithanuj.catalog.product.service;
 
 import com.codewithanuj.catalog.product.dto.ProductResponseDto;
+import com.codewithanuj.catalog.product.dto.ProductUpdateRequest;
 import com.codewithanuj.catalog.product.model.Product;
 import com.codewithanuj.catalog.product.model.ProductStatus;
 import com.codewithanuj.catalog.product.repository.ProductRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -41,6 +44,25 @@ public class ProductService {
                 .filter(product -> product.getProductNumber().equalsIgnoreCase(productNumber))
                 .findFirst()
                 .map(this::toDto);
+    }
+
+    public ProductResponseDto updateProduct(String productNumber, ProductUpdateRequest request) {
+        if (!productRepository.existsById(productNumber)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found: " + productNumber);
+        }
+
+        Product updated = new Product(
+                productNumber,
+                request.title(),
+                request.description(),
+                request.price(),
+                request.currency(),
+                request.status(),
+                request.featured(),
+                request.instagramPostUrl()
+        );
+
+        return toDto(productRepository.save(updated));
     }
 
     private List<Product> getProducts() {
