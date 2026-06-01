@@ -1,6 +1,9 @@
 package com.codewithanuj.catalog.product.service;
 
+import com.codewithanuj.catalog.product.dto.ProductCreateRequest;
 import com.codewithanuj.catalog.product.dto.ProductResponseDto;
+import com.codewithanuj.catalog.product.dto.UpdateFeaturedRequest;
+import com.codewithanuj.catalog.product.dto.UpdateStatusRequest;
 import com.codewithanuj.catalog.product.dto.ProductUpdateRequest;
 import com.codewithanuj.catalog.product.model.Product;
 import com.codewithanuj.catalog.product.model.ProductStatus;
@@ -46,6 +49,26 @@ public class ProductService {
                 .map(this::toDto);
     }
 
+    public ProductResponseDto createProduct(ProductCreateRequest request) {
+        if (productRepository.existsById(request.productNumber())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Product already exists: " + request.productNumber());
+        }
+
+        Product product = new Product(
+                request.productNumber(),
+                request.title(),
+                request.description(),
+                request.price(),
+                request.currency(),
+                request.status(),
+                request.featured(),
+                request.instagramPostUrl()
+        );
+
+        return toDto(productRepository.save(product));
+    }
+
     public ProductResponseDto updateProduct(String productNumber, ProductUpdateRequest request) {
         if (!productRepository.existsById(productNumber)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found: " + productNumber);
@@ -60,6 +83,44 @@ public class ProductService {
                 request.status(),
                 request.featured(),
                 request.instagramPostUrl()
+        );
+
+        return toDto(productRepository.save(updated));
+    }
+
+    public ProductResponseDto updateFeatured(String productNumber, UpdateFeaturedRequest request) {
+        Product existing = productRepository.findById(productNumber)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Product not found: " + productNumber));
+
+        Product updated = new Product(
+                existing.getProductNumber(),
+                existing.getTitle(),
+                existing.getDescription(),
+                existing.getPrice(),
+                existing.getCurrency(),
+                existing.getStatus(),
+                request.featured(),
+                existing.getInstagramPostUrl()
+        );
+
+        return toDto(productRepository.save(updated));
+    }
+
+    public ProductResponseDto updateStatus(String productNumber, UpdateStatusRequest request) {
+        Product existing = productRepository.findById(productNumber)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Product not found: " + productNumber));
+
+        Product updated = new Product(
+                existing.getProductNumber(),
+                existing.getTitle(),
+                existing.getDescription(),
+                existing.getPrice(),
+                existing.getCurrency(),
+                request.status(),
+                existing.isFeatured(),
+                existing.getInstagramPostUrl()
         );
 
         return toDto(productRepository.save(updated));
