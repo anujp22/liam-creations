@@ -65,4 +65,21 @@ class ProductRepositoryTest {
 
         assertThat(found).isEmpty();
     }
+
+    @Test
+    void findByStatusReturnsOnlyProductsWithMatchingStatus() {
+        productRepository.save(new Product(
+                "PRD-001", "Clay Mug", "Desc", new BigDecimal("24.99"),
+                "USD", ProductStatus.IN_STOCK, true, "https://instagram.com/p/001"
+        ));
+        productRepository.save(new Product(
+                "PRD-002", "Desk Lamp", "Desc", new BigDecimal("49.99"),
+                "USD", ProductStatus.OUT_OF_STOCK, false, "https://instagram.com/p/002"
+        ));
+
+        List<Product> inStock = productRepository.findByStatus(ProductStatus.IN_STOCK);
+
+        assertThat(inStock).hasSize(1);
+        assertThat(inStock.get(0).getProductNumber()).isEqualTo("PRD-001");
+    }
 }
