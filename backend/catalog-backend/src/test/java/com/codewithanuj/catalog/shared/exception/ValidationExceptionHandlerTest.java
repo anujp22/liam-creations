@@ -5,6 +5,7 @@ import com.codewithanuj.catalog.product.service.ProductService;
 import jakarta.validation.Valid;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -23,6 +24,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest
 @Import(ValidationExceptionHandlerTest.TestConfig.class)
+@AutoConfigureMockMvc(addFilters = false)
 class ValidationExceptionHandlerTest {
 
     @Autowired
