@@ -13,6 +13,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
@@ -37,27 +41,29 @@ class ProductServiceTest {
 
     @Test
     void getAllProductsReturnsMappedDtoList() {
-        when(productRepository.findAll()).thenReturn(List.of(
+        Pageable pageable = PageRequest.of(0, 20);
+        when(productRepository.findAll(pageable)).thenReturn(new PageImpl<>(List.of(
                 product("PRD-001", ProductStatus.IN_STOCK),
                 product("PRD-002", ProductStatus.OUT_OF_STOCK)
-        ));
+        )));
 
-        List<ProductResponseDto> result = productService.getAllProducts();
+        Page<ProductResponseDto> result = productService.getAllProducts(pageable);
 
-        assertThat(result).hasSize(2);
-        assertThat(result).extracting(ProductResponseDto::productNumber)
+        assertThat(result.getTotalElements()).isEqualTo(2);
+        assertThat(result.getContent()).extracting(ProductResponseDto::productNumber)
                 .containsExactly("PRD-001", "PRD-002");
     }
 
     @Test
     void getProductsByStatusDelegatesToRepositoryFindByStatus() {
-        when(productRepository.findByStatus(ProductStatus.IN_STOCK))
-                .thenReturn(List.of(product("PRD-001", ProductStatus.IN_STOCK)));
+        Pageable pageable = PageRequest.of(0, 20);
+        when(productRepository.findByStatus(ProductStatus.IN_STOCK, pageable))
+                .thenReturn(new PageImpl<>(List.of(product("PRD-001", ProductStatus.IN_STOCK))));
 
-        List<ProductResponseDto> result = productService.getProductsByStatus(ProductStatus.IN_STOCK);
+        Page<ProductResponseDto> result = productService.getProductsByStatus(ProductStatus.IN_STOCK, pageable);
 
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).status()).isEqualTo(ProductStatus.IN_STOCK);
+        assertThat(result.getTotalElements()).isEqualTo(1);
+        assertThat(result.getContent().get(0).status()).isEqualTo(ProductStatus.IN_STOCK);
     }
 
     @Test

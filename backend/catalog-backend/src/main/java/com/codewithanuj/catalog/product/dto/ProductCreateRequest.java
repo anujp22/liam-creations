@@ -10,7 +10,7 @@ import java.math.BigDecimal;
 
 public record ProductCreateRequest(
         @NotBlank
-        @Pattern(regexp = "^PRD-\\d{3}$", message = "productNumber must look like PRD-001")
+        @Pattern(regexp = "^PRD-\\d{3,6}$", message = "productNumber must match PRD-001 to PRD-999999")
         String productNumber,
         @NotBlank
         String title,

@@ -6,6 +6,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
@@ -77,9 +80,9 @@ class ProductRepositoryTest {
                 "USD", ProductStatus.OUT_OF_STOCK, false, "https://instagram.com/p/002"
         ));
 
-        List<Product> inStock = productRepository.findByStatus(ProductStatus.IN_STOCK);
+        Page<Product> inStock = productRepository.findByStatus(ProductStatus.IN_STOCK, PageRequest.of(0, 20));
 
-        assertThat(inStock).hasSize(1);
-        assertThat(inStock.get(0).getProductNumber()).isEqualTo("PRD-001");
+        assertThat(inStock.getTotalElements()).isEqualTo(1);
+        assertThat(inStock.getContent().get(0).getProductNumber()).isEqualTo("PRD-001");
     }
 }

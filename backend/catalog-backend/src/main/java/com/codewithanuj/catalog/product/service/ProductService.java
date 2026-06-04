@@ -13,7 +13,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import java.util.Optional;
 
 @Service
@@ -25,16 +27,12 @@ public class ProductService {
         this.productRepository = productRepository;
     }
 
-    public List<ProductResponseDto> getAllProducts() {
-        return productRepository.findAll().stream()
-                .map(this::toDto)
-                .toList();
+    public Page<ProductResponseDto> getAllProducts(Pageable pageable) {
+        return productRepository.findAll(pageable).map(this::toDto);
     }
 
-    public List<ProductResponseDto> getProductsByStatus(ProductStatus status) {
-        return productRepository.findByStatus(status).stream()
-                .map(this::toDto)
-                .toList();
+    public Page<ProductResponseDto> getProductsByStatus(ProductStatus status, Pageable pageable) {
+        return productRepository.findByStatus(status, pageable).map(this::toDto);
     }
 
     public Optional<ProductResponseDto> getProductByProductNumber(String productNumber) {

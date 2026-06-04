@@ -8,6 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -15,6 +17,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -32,29 +35,32 @@ class ProductControllerTest {
 
     @Test
     void getProductsReturnsAllProductsWhenNoStatusIsProvided() throws Exception {
-        when(productService.getAllProducts()).thenReturn(List.of(
+        var items = List.of(
                 product("PRD-001", ProductStatus.IN_STOCK),
                 product("PRD-002", ProductStatus.OUT_OF_STOCK)
-        ));
+        );
+        when(productService.getAllProducts(any(Pageable.class)))
+                .thenReturn(new PageImpl<>(items));
 
         mockMvc.perform(get("/api/products"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[0].productNumber").value("PRD-001"))
-                .andExpect(jsonPath("$[1].productNumber").value("PRD-002"));
+                .andExpect(jsonPath("$.content.length()").value(2))
+                .andExpect(jsonPath("$.content[0].productNumber").value("PRD-001"))
+                .andExpect(jsonPath("$.content[1].productNumber").value("PRD-002"))
+                .andExpect(jsonPath("$.totalElements").value(2));
     }
 
     @Test
     void getProductsReturnsFilteredProductsWhenStatusIsProvided() throws Exception {
-        when(productService.getProductsByStatus(ProductStatus.IN_STOCK)).thenReturn(List.of(
-                product("PRD-001", ProductStatus.IN_STOCK)
-        ));
+        var items = List.of(product("PRD-001", ProductStatus.IN_STOCK));
+        when(productService.getProductsByStatus(any(ProductStatus.class), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(items));
 
         mockMvc.perform(get("/api/products").param("status", "IN_STOCK"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].productNumber").value("PRD-001"))
-                .andExpect(jsonPath("$[0].status").value("IN_STOCK"));
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].productNumber").value("PRD-001"))
+                .andExpect(jsonPath("$.content[0].status").value("IN_STOCK"));
     }
 
     @Test
@@ -76,13 +82,12 @@ class ProductControllerTest {
 
     @Test
     void getProductsReturnsAllProductsWhenStatusIsEmptyString() throws Exception {
-        when(productService.getAllProducts()).thenReturn(List.of(
-                product("PRD-001", ProductStatus.IN_STOCK)
-        ));
+        when(productService.getAllProducts(any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(product("PRD-001", ProductStatus.IN_STOCK))));
 
         mockMvc.perform(get("/api/products").param("status", ""))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(1));
+                .andExpect(jsonPath("$.content.length()").value(1));
     }
 
     @Test
