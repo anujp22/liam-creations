@@ -23,8 +23,6 @@ public record ProductCreateRequest(
         String currency,
         @NotNull
         ProductStatus status,
-        boolean featured,
-        @NotBlank
-        String instagramPostUrl
+        boolean featured
 ) {
 }

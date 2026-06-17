@@ -60,9 +60,8 @@ class AdminProductControllerTest {
     @Test
     void createProductReturns201WhenRequestIsValid() throws Exception {
         ProductCreateRequest request = new ProductCreateRequest(
-                "PRD-010", "New Mug", "A nice mug",
-                new BigDecimal("29.99"), "USD", ProductStatus.IN_STOCK, true,
-                "https://instagram.com/p/010"
+                "PRD-010", "Banarasi Silk Saree", "Hand-woven pure silk",
+                new BigDecimal("8500.00"), "INR", ProductStatus.IN_STOCK, true
         );
 
         when(productService.createProduct(any())).thenReturn(toDto("PRD-010", ProductStatus.IN_STOCK));
@@ -78,8 +77,7 @@ class AdminProductControllerTest {
     void createProductReturns409WhenProductNumberAlreadyExists() throws Exception {
         ProductCreateRequest request = new ProductCreateRequest(
                 "PRD-001", "Duplicate", "Already exists",
-                new BigDecimal("9.99"), "USD", ProductStatus.IN_STOCK, false,
-                "https://instagram.com/p/001"
+                new BigDecimal("999.00"), "INR", ProductStatus.IN_STOCK, false
         );
 
         when(productService.createProduct(any()))
@@ -98,9 +96,8 @@ class AdminProductControllerTest {
     @Test
     void updateProductReturns200WhenProductExists() throws Exception {
         ProductUpdateRequest request = new ProductUpdateRequest(
-                "Updated Mug", "Updated desc",
-                new BigDecimal("34.99"), "USD", ProductStatus.OUT_OF_STOCK, false,
-                "https://instagram.com/p/001"
+                "Updated Saree", "Updated desc",
+                new BigDecimal("9500.00"), "INR", ProductStatus.OUT_OF_STOCK, false
         );
 
         when(productService.updateProduct(eq("PRD-001"), any()))
@@ -117,8 +114,7 @@ class AdminProductControllerTest {
     void updateProductReturns404WhenProductDoesNotExist() throws Exception {
         ProductUpdateRequest request = new ProductUpdateRequest(
                 "Ghost Product", "Does not exist",
-                new BigDecimal("9.99"), "USD", ProductStatus.IN_STOCK, false,
-                "https://instagram.com/p/999"
+                new BigDecimal("999.00"), "INR", ProductStatus.IN_STOCK, false
         );
 
         when(productService.updateProduct(eq("PRD-999"), any()))
@@ -197,8 +193,7 @@ class AdminProductControllerTest {
     private ProductResponseDto toDto(String productNumber, ProductStatus status) {
         return new ProductResponseDto(
                 productNumber, "Sample Product", "A product",
-                new BigDecimal("19.99"), "USD", status, true,
-                "https://instagram.com/p/" + productNumber.toLowerCase()
+                new BigDecimal("1999.00"), "INR", status, true
         );
     }
 }

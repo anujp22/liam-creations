@@ -7,7 +7,17 @@ function App() {
   return (
     <div className="catalog">
       <header className="catalog-header">
-        <h1>Shop</h1>
+        <h1>Shaadi Catalog</h1>
+        <nav className="catalog-nav">
+          <a
+            href="https://www.instagram.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="nav-instagram"
+          >
+            Follow us on Instagram ↗
+          </a>
+        </nav>
       </header>
       <main>
         <Routes>

@@ -11,7 +11,6 @@ public record ProductResponseDto(
         BigDecimal price,
         String currency,
         ProductStatus status,
-        boolean featured,
-        String instagramPostUrl
+        boolean featured
 ) {
 }

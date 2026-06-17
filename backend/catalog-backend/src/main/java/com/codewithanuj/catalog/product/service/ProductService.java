@@ -36,8 +36,7 @@ public class ProductService {
     }
 
     public Optional<ProductResponseDto> getProductByProductNumber(String productNumber) {
-        return productRepository.findById(productNumber)
-                .map(this::toDto);
+        return productRepository.findById(productNumber).map(this::toDto);
     }
 
     @Transactional
@@ -54,8 +53,7 @@ public class ProductService {
                 request.price(),
                 request.currency(),
                 request.status(),
-                request.featured(),
-                request.instagramPostUrl()
+                request.featured()
         );
 
         return toDto(productRepository.save(product));
@@ -75,8 +73,7 @@ public class ProductService {
                 request.price(),
                 request.currency(),
                 request.status(),
-                request.featured(),
-                request.instagramPostUrl()
+                request.featured()
         );
 
         return toDto(productRepository.save(updated));
@@ -95,8 +92,7 @@ public class ProductService {
                 existing.getPrice(),
                 existing.getCurrency(),
                 existing.getStatus(),
-                request.featured(),
-                existing.getInstagramPostUrl()
+                request.featured()
         );
 
         return toDto(productRepository.save(updated));
@@ -115,8 +111,7 @@ public class ProductService {
                 existing.getPrice(),
                 existing.getCurrency(),
                 request.status(),
-                existing.isFeatured(),
-                existing.getInstagramPostUrl()
+                existing.isFeatured()
         );
 
         return toDto(productRepository.save(updated));
@@ -130,8 +125,7 @@ public class ProductService {
                 product.getPrice(),
                 product.getCurrency(),
                 product.getStatus(),
-                product.isFeatured(),
-                product.getInstagramPostUrl()
+                product.isFeatured()
         );
     }
 }
