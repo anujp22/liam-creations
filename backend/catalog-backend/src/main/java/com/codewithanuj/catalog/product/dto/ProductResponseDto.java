@@ -4,6 +4,7 @@ import com.codewithanuj.catalog.product.model.ProductCategory;
 import com.codewithanuj.catalog.product.model.ProductStatus;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 
 public record ProductResponseDto(
         String productNumber,
@@ -14,6 +15,8 @@ public record ProductResponseDto(
         ProductStatus status,
         boolean featured,
         String imageUrl,
-        ProductCategory category
+        ProductCategory category,
+        Instant createdAt,
+        Instant updatedAt
 ) {
 }

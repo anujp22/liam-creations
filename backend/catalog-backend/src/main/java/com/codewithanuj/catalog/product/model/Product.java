@@ -6,8 +6,11 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.Column;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 
 @Entity
 @Table(name = "products")
@@ -26,6 +29,11 @@ public class Product {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ProductCategory category;
+    @CreationTimestamp
+    @Column(updatable = false)
+    private Instant createdAt;
+    @UpdateTimestamp
+    private Instant updatedAt;
 
     protected Product() {
     }
@@ -61,4 +69,6 @@ public class Product {
     public boolean isFeatured() { return featured; }
     public String getImageUrl() { return imageUrl; }
     public ProductCategory getCategory() { return category; }
+    public Instant getCreatedAt() { return createdAt; }
+    public Instant getUpdatedAt() { return updatedAt; }
 }

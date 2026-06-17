@@ -131,7 +131,7 @@ class ProductControllerTest {
     private ProductResponseDto product(String productNumber, ProductStatus status) {
         return new ProductResponseDto(
                 productNumber, "Sample Product", "A product",
-                new BigDecimal("1999.00"), "INR", status, true, null, ProductCategory.JEWELLERY
+                new BigDecimal("1999.00"), "INR", status, true, null, ProductCategory.JEWELLERY, null, null
         );
     }
 

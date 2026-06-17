@@ -40,6 +40,16 @@ export function ProductDetailPage() {
             ₹{Number(product.price).toLocaleString('en-IN')}
           </span>
         </div>
+        {product.createdAt && (
+          <p className="detail-meta">
+            Added {new Date(product.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
+          </p>
+        )}
+        {product.updatedAt && product.updatedAt !== product.createdAt && (
+          <p className="detail-meta">
+            Updated {new Date(product.updatedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
+          </p>
+        )}
       </div>
     </div>
   );

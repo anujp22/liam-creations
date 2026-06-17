@@ -158,7 +158,9 @@ public class ProductService {
                 product.getStatus(),
                 product.isFeatured(),
                 product.getImageUrl(),
-                product.getCategory()
+                product.getCategory(),
+                product.getCreatedAt(),
+                product.getUpdatedAt()
         );
     }
 }

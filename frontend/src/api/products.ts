@@ -20,6 +20,8 @@ export interface Product {
   featured: boolean;
   imageUrl?: string;
   category: ProductCategory;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 interface PagedResponse<T> {
@@ -42,12 +44,14 @@ export async function fetchProducts(
   status?: ProductStatus,
   category?: ProductCategory,
   page = 0,
-  search?: string
+  search?: string,
+  sort?: string
 ): Promise<ProductPage> {
   const params = new URLSearchParams();
   if (status) params.set('status', status);
   if (category) params.set('category', category);
   if (search) params.set('search', search);
+  if (sort) params.set('sort', sort);
   params.set('page', String(page));
   const url = `/api/products?${params.toString()}`;
   const res = await fetch(url);

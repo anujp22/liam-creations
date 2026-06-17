@@ -3,6 +3,7 @@ import { fetchProducts } from '../api/products';
 import type { Product, ProductCategory, ProductStatus } from '../api/products';
 import { ProductCard } from './ProductCard';
 import { CategoryFilter } from './CategoryFilter';
+import { SortSelect } from './SortSelect';
 import { StatusFilter } from './StatusFilter';
 
 interface FetchState {
@@ -17,6 +18,7 @@ export function ProductGrid() {
   const [category, setCategory] = useState<ProductCategory | undefined>(undefined);
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState<string | undefined>(undefined);
+  const [sort, setSort] = useState('title,asc');
   const [page, setPage] = useState(0);
   const [count, setCount] = useState<number>(0);
   const [{ loading, error, products, totalPages }, setFetchState] = useState<FetchState>({
@@ -28,6 +30,7 @@ export function ProductGrid() {
 
   const handleStatusChange = (s: ProductStatus | undefined) => { setStatus(s); setPage(0); };
   const handleCategoryChange = (c: ProductCategory | undefined) => { setCategory(c); setPage(0); };
+  const handleSortChange = (s: string) => { setSort(s); setPage(0); };
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -39,13 +42,13 @@ export function ProductGrid() {
 
   useEffect(() => {
     setFetchState((prev) => ({ ...prev, loading: true }));
-    fetchProducts(status, category, page, search)
+    fetchProducts(status, category, page, search, sort)
       .then(({ products: data, totalPages: tp }) => {
         setFetchState({ loading: false, error: null, products: data, totalPages: tp });
         setCount(data.length);
       })
       .catch((e: Error) => setFetchState({ loading: false, error: e.message, products: [], totalPages: 0 }));
-  }, [status, category, page, search]);
+  }, [status, category, page, search, sort]);
 
   useEffect(() => {
     document.title = `Instagram Catalog — ${count} products`;
@@ -60,8 +63,11 @@ export function ProductGrid() {
         value={searchInput}
         onChange={(e) => setSearchInput(e.target.value)}
       />
-      <StatusFilter active={status} onChange={handleStatusChange} />
-      <CategoryFilter active={category} onChange={handleCategoryChange} />
+      <div className="toolbar">
+        <StatusFilter active={status} onChange={handleStatusChange} />
+        <CategoryFilter active={category} onChange={handleCategoryChange} />
+        <SortSelect value={sort} onChange={handleSortChange} />
+      </div>
       {loading && <p className="grid-message">Loading products...</p>}
       {error && <p className="grid-message grid-error">{error}</p>}
       {!loading && !error && products.length === 0 && (
