@@ -1,5 +1,6 @@
 package com.codewithanuj.catalog.product.dto;
 
+import com.codewithanuj.catalog.product.model.ProductCategory;
 import com.codewithanuj.catalog.product.model.ProductStatus;
 
 import java.math.BigDecimal;
@@ -11,6 +12,8 @@ public record ProductResponseDto(
         BigDecimal price,
         String currency,
         ProductStatus status,
-        boolean featured
+        boolean featured,
+        String imageUrl,
+        ProductCategory category
 ) {
 }

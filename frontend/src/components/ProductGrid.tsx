@@ -1,39 +1,67 @@
 import { useEffect, useState } from 'react';
 import { fetchProducts } from '../api/products';
-import type { Product, ProductStatus } from '../api/products';
+import type { Product, ProductCategory, ProductStatus } from '../api/products';
 import { ProductCard } from './ProductCard';
+import { CategoryFilter } from './CategoryFilter';
 import { StatusFilter } from './StatusFilter';
 
 interface FetchState {
   loading: boolean;
   error: string | null;
   products: Product[];
+  totalPages: number;
 }
 
 export function ProductGrid() {
   const [status, setStatus] = useState<ProductStatus | undefined>(undefined);
+  const [category, setCategory] = useState<ProductCategory | undefined>(undefined);
+  const [searchInput, setSearchInput] = useState('');
+  const [search, setSearch] = useState<string | undefined>(undefined);
+  const [page, setPage] = useState(0);
   const [count, setCount] = useState<number>(0);
-  const [{ loading, error, products }, setFetchState] = useState<FetchState>({
+  const [{ loading, error, products, totalPages }, setFetchState] = useState<FetchState>({
     loading: true,
     error: null,
     products: [],
+    totalPages: 0,
   });
 
+  const handleStatusChange = (s: ProductStatus | undefined) => { setStatus(s); setPage(0); };
+  const handleCategoryChange = (c: ProductCategory | undefined) => { setCategory(c); setPage(0); };
+
   useEffect(() => {
-    fetchProducts(status)
-      .then((data) => {
-        setFetchState({ loading: false, error: null, products: data });
+    const timer = setTimeout(() => {
+      setSearch(searchInput.trim() || undefined);
+      setPage(0);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  useEffect(() => {
+    setFetchState((prev) => ({ ...prev, loading: true }));
+    fetchProducts(status, category, page, search)
+      .then(({ products: data, totalPages: tp }) => {
+        setFetchState({ loading: false, error: null, products: data, totalPages: tp });
         setCount(data.length);
       })
-      .catch((e: Error) => setFetchState({ loading: false, error: e.message, products: [] }));
-  }, [status]);
+      .catch((e: Error) => setFetchState({ loading: false, error: e.message, products: [], totalPages: 0 }));
+  }, [status, category, page, search]);
+
   useEffect(() => {
     document.title = `Instagram Catalog — ${count} products`;
   }, [count]);
 
   return (
     <>
-      <StatusFilter active={status} onChange={setStatus} />
+      <input
+        type="search"
+        className="search-input"
+        placeholder="Search products..."
+        value={searchInput}
+        onChange={(e) => setSearchInput(e.target.value)}
+      />
+      <StatusFilter active={status} onChange={handleStatusChange} />
+      <CategoryFilter active={category} onChange={handleCategoryChange} />
       {loading && <p className="grid-message">Loading products...</p>}
       {error && <p className="grid-message grid-error">{error}</p>}
       {!loading && !error && products.length === 0 && (
@@ -47,6 +75,25 @@ export function ProductGrid() {
               <ProductCard key={p.productNumber} product={p} />
             ))}
           </div>
+          {totalPages > 1 && (
+            <div className="pagination">
+              <button
+                className="pagination-btn"
+                onClick={() => setPage((p) => p - 1)}
+                disabled={page === 0}
+              >
+                ← Prev
+              </button>
+              <span className="pagination-info">Page {page + 1} of {totalPages}</span>
+              <button
+                className="pagination-btn"
+                onClick={() => setPage((p) => p + 1)}
+                disabled={page >= totalPages - 1}
+              >
+                Next →
+              </button>
+            </div>
+          )}
         </>
       )}
     </>

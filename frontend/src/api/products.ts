@@ -1,5 +1,15 @@
 export type ProductStatus = 'IN_STOCK' | 'OUT_OF_STOCK' | 'BUILT_ON_REQUEST';
 
+export type ProductCategory =
+  | 'BRIDAL_SAREES'
+  | 'BRIDAL_LEHENGAS'
+  | 'HALDI_MEHENDI'
+  | 'JEWELLERY'
+  | 'CLAY_POTTERY'
+  | 'PUJA_RITUALS'
+  | 'WEDDING_DECOR'
+  | 'SWEETS_GIFTS';
+
 export interface Product {
   productNumber: string;
   title: string;
@@ -8,6 +18,8 @@ export interface Product {
   currency: string;
   status: ProductStatus;
   featured: boolean;
+  imageUrl?: string;
+  category: ProductCategory;
 }
 
 interface PagedResponse<T> {
@@ -20,12 +32,28 @@ interface PagedResponse<T> {
   };
 }
 
-export async function fetchProducts(status?: ProductStatus): Promise<Product[]> {
-  const url = status ? `/api/products?status=${status}` : '/api/products';
+export interface ProductPage {
+  products: Product[];
+  totalPages: number;
+  currentPage: number;
+}
+
+export async function fetchProducts(
+  status?: ProductStatus,
+  category?: ProductCategory,
+  page = 0,
+  search?: string
+): Promise<ProductPage> {
+  const params = new URLSearchParams();
+  if (status) params.set('status', status);
+  if (category) params.set('category', category);
+  if (search) params.set('search', search);
+  params.set('page', String(page));
+  const url = `/api/products?${params.toString()}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Failed to fetch products: ${res.status}`);
   const data: PagedResponse<Product> = await res.json();
-  return data.content;
+  return { products: data.content, totalPages: data.page.totalPages, currentPage: data.page.number };
 }
 
 export async function fetchProduct(productNumber: string): Promise<Product> {

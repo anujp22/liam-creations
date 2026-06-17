@@ -28,6 +28,9 @@ export function ProductDetailPage() {
         ← Back to shop
       </button>
       <div className="detail-card">
+        {product.imageUrl && (
+          <img src={product.imageUrl} alt={product.title} className="detail-image" />
+        )}
         <span className="product-status">{product.status.replace(/_/g, ' ')}</span>
         {product.featured && <span className="product-featured">Featured</span>}
         <h2 className="detail-title">{product.title}</h2>

@@ -1,6 +1,7 @@
 package com.codewithanuj.catalog.product.controller;
 
 import com.codewithanuj.catalog.product.dto.ProductResponseDto;
+import com.codewithanuj.catalog.product.model.ProductCategory;
 import com.codewithanuj.catalog.product.model.ProductStatus;
 import com.codewithanuj.catalog.product.service.ProductService;
 import org.springframework.data.domain.Page;
@@ -25,11 +26,10 @@ public class ProductController {
     @GetMapping("/api/products")
     public Page<ProductResponseDto> getProducts(
             @RequestParam(required = false) ProductStatus status,
+            @RequestParam(required = false) ProductCategory category,
+            @RequestParam(required = false) String search,
             @PageableDefault(size = 20) Pageable pageable) {
-        if (status == null) {
-            return productService.getAllProducts(pageable);
-        }
-        return productService.getProductsByStatus(status, pageable);
+        return productService.getProducts(status, category, search, pageable);
     }
 
     @GetMapping("/api/products/{productNumber}")

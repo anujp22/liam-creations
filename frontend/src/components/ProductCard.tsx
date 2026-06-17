@@ -8,6 +8,9 @@ interface Props {
 export function ProductCard({ product }: Props) {
   return (
     <Link to={`/products/${product.productNumber}`} className="product-card">
+      {product.imageUrl && (
+        <img src={product.imageUrl} alt={product.title} className="product-image" />
+      )}
       <span className="product-status">{product.status.replace(/_/g, ' ')}</span>
       <h2 className="product-title">{product.title}</h2>
       <p className="product-description">{product.description}</p>

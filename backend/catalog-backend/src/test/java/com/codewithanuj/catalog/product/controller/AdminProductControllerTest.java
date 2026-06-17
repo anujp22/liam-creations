@@ -5,6 +5,7 @@ import com.codewithanuj.catalog.product.dto.ProductResponseDto;
 import com.codewithanuj.catalog.product.dto.ProductUpdateRequest;
 import com.codewithanuj.catalog.product.dto.UpdateFeaturedRequest;
 import com.codewithanuj.catalog.product.dto.UpdateStatusRequest;
+import com.codewithanuj.catalog.product.model.ProductCategory;
 import com.codewithanuj.catalog.product.model.ProductStatus;
 import com.codewithanuj.catalog.product.service.ProductService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -24,9 +25,12 @@ import java.math.BigDecimal;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -55,13 +59,33 @@ class AdminProductControllerTest {
         }
     }
 
+    // ── DELETE ───────────────────────────────────────────────────────────────
+
+    @Test
+    void deleteProductReturns204WhenProductExists() throws Exception {
+        doNothing().when(productService).deleteProduct("PRD-001");
+
+        mockMvc.perform(delete("/api/admin/products/PRD-001"))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void deleteProductReturns404WhenProductDoesNotExist() throws Exception {
+        doThrow(new ResponseStatusException(NOT_FOUND, "Product not found: PRD-999"))
+                .when(productService).deleteProduct("PRD-999");
+
+        mockMvc.perform(delete("/api/admin/products/PRD-999"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("Product not found: PRD-999"));
+    }
+
     // ── POST ─────────────────────────────────────────────────────────────────
 
     @Test
     void createProductReturns201WhenRequestIsValid() throws Exception {
         ProductCreateRequest request = new ProductCreateRequest(
                 "PRD-010", "Banarasi Silk Saree", "Hand-woven pure silk",
-                new BigDecimal("8500.00"), "INR", ProductStatus.IN_STOCK, true
+                new BigDecimal("8500.00"), "INR", ProductStatus.IN_STOCK, true, null, ProductCategory.BRIDAL_SAREES
         );
 
         when(productService.createProduct(any())).thenReturn(toDto("PRD-010", ProductStatus.IN_STOCK));
@@ -77,7 +101,7 @@ class AdminProductControllerTest {
     void createProductReturns409WhenProductNumberAlreadyExists() throws Exception {
         ProductCreateRequest request = new ProductCreateRequest(
                 "PRD-001", "Duplicate", "Already exists",
-                new BigDecimal("999.00"), "INR", ProductStatus.IN_STOCK, false
+                new BigDecimal("999.00"), "INR", ProductStatus.IN_STOCK, false, null, ProductCategory.JEWELLERY
         );
 
         when(productService.createProduct(any()))
@@ -97,7 +121,7 @@ class AdminProductControllerTest {
     void updateProductReturns200WhenProductExists() throws Exception {
         ProductUpdateRequest request = new ProductUpdateRequest(
                 "Updated Saree", "Updated desc",
-                new BigDecimal("9500.00"), "INR", ProductStatus.OUT_OF_STOCK, false
+                new BigDecimal("9500.00"), "INR", ProductStatus.OUT_OF_STOCK, false, null, ProductCategory.BRIDAL_SAREES
         );
 
         when(productService.updateProduct(eq("PRD-001"), any()))
@@ -114,7 +138,7 @@ class AdminProductControllerTest {
     void updateProductReturns404WhenProductDoesNotExist() throws Exception {
         ProductUpdateRequest request = new ProductUpdateRequest(
                 "Ghost Product", "Does not exist",
-                new BigDecimal("999.00"), "INR", ProductStatus.IN_STOCK, false
+                new BigDecimal("999.00"), "INR", ProductStatus.IN_STOCK, false, null, ProductCategory.JEWELLERY
         );
 
         when(productService.updateProduct(eq("PRD-999"), any()))
@@ -193,7 +217,7 @@ class AdminProductControllerTest {
     private ProductResponseDto toDto(String productNumber, ProductStatus status) {
         return new ProductResponseDto(
                 productNumber, "Sample Product", "A product",
-                new BigDecimal("1999.00"), "INR", status, true
+                new BigDecimal("1999.00"), "INR", status, true, null, ProductCategory.JEWELLERY
         );
     }
 }
