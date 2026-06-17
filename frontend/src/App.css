@@ -14,6 +14,7 @@
 .catalog-nav {
   display: flex;
   align-items: center;
+  gap: 20px;
 }
 
 .nav-instagram {
@@ -70,19 +71,26 @@
 .product-card {
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 20px;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: 12px;
   text-align: left;
   box-shadow: var(--shadow);
-  text-decoration: none;
-  color: inherit;
   transition: box-shadow 0.2s;
 
   &:hover {
     box-shadow: var(--shadow), 0 0 0 2px var(--accent-border);
   }
+}
+
+.product-card-link {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-decoration: none;
+  color: inherit;
+  flex: 1;
 }
 
 .product-status {
@@ -199,4 +207,330 @@
   align-items: center;
   padding-top: 16px;
   border-top: 1px solid var(--border);
+}
+
+.detail-meta {
+  font-size: 13px;
+  color: var(--text);
+}
+
+/* ── Add to cart button ──────────────────────────────────────────────── */
+
+.add-to-cart-btn {
+  width: 100%;
+  padding: 10px 16px;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+
+  &:hover {
+    opacity: 0.88;
+  }
+}
+
+.add-to-cart-btn--in-cart {
+  background: var(--accent-bg);
+  color: var(--accent);
+  border-top: 1px solid var(--accent-border);
+}
+
+/* On detail page the button sits inline, not full-width */
+.detail-footer .add-to-cart-btn {
+  width: auto;
+  border-radius: 6px;
+}
+
+/* ── Cart icon in header ─────────────────────────────────────────────── */
+
+.cart-icon-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  color: var(--text);
+  text-decoration: none;
+
+  &:hover {
+    color: var(--accent);
+  }
+}
+
+.cart-icon-svg {
+  width: 24px;
+  height: 24px;
+}
+
+.cart-badge {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+}
+
+/* ── Cart page ───────────────────────────────────────────────────────── */
+
+.cart-page {
+  max-width: 680px;
+  text-align: left;
+}
+
+.cart-empty {
+  text-align: center;
+  padding: 64px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.cart-empty-text {
+  color: var(--text);
+  font-size: 16px;
+}
+
+.cart-back-link {
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 14px;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.cart-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.cart-title {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.cart-count {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--text);
+}
+
+.cart-clear-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+
+  &:hover {
+    border-color: #dc2626;
+    color: #dc2626;
+  }
+}
+
+.cart-items {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.cart-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  background: var(--bg);
+  gap: 16px;
+
+  &:not(:last-child) {
+    border-bottom: 1px solid var(--border);
+  }
+}
+
+.cart-item-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.cart-item-image {
+  width: 52px;
+  height: 52px;
+  object-fit: cover;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.cart-item-text {
+  min-width: 0;
+}
+
+.cart-item-title {
+  font-weight: 500;
+  font-size: 15px;
+  color: var(--text-h);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cart-item-unit {
+  font-size: 13px;
+  color: var(--text);
+  margin-top: 2px;
+}
+
+.cart-item-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+.qty-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.qty-btn {
+  background: none;
+  border: none;
+  width: 28px;
+  height: 28px;
+  font-size: 16px;
+  cursor: pointer;
+  color: var(--text-h);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    background: var(--accent-bg);
+    color: var(--accent);
+  }
+}
+
+.qty-value {
+  font-size: 14px;
+  font-weight: 600;
+  min-width: 20px;
+  text-align: center;
+  color: var(--text-h);
+}
+
+.cart-item-subtotal {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--text-h);
+  min-width: 80px;
+  text-align: right;
+}
+
+.cart-remove-btn {
+  background: none;
+  border: none;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+
+  &:hover {
+    color: #dc2626;
+    background: rgba(220, 38, 38, 0.08);
+  }
+}
+
+.cart-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cart-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--code-bg);
+}
+
+.cart-total-label {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.cart-total-amount {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-h);
+}
+
+/* ── WhatsApp CTA button ─────────────────────────────────────────────── */
+
+.whatsapp-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 24px;
+  background: #25d366;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: background 0.15s;
+
+  &:hover {
+    background: #1ebe5d;
+  }
+}
+
+.whatsapp-icon {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+
+.cart-continue-link {
+  text-align: center;
+  font-size: 14px;
+  color: var(--accent);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
 }
