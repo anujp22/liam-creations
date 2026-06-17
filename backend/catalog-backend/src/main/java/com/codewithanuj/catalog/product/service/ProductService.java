@@ -6,6 +6,7 @@ import com.codewithanuj.catalog.product.dto.ProductUpdateRequest;
 import com.codewithanuj.catalog.product.dto.UpdateFeaturedRequest;
 import com.codewithanuj.catalog.product.dto.UpdateStatusRequest;
 import com.codewithanuj.catalog.product.model.Product;
+import com.codewithanuj.catalog.product.model.ProductCategory;
 import com.codewithanuj.catalog.product.model.ProductStatus;
 import com.codewithanuj.catalog.product.repository.ProductRepository;
 import org.springframework.http.HttpStatus;
@@ -35,8 +36,42 @@ public class ProductService {
         return productRepository.findByStatus(status, pageable).map(this::toDto);
     }
 
+    public Page<ProductResponseDto> getProductsByCategory(ProductCategory category, Pageable pageable) {
+        return productRepository.findByCategory(category, pageable).map(this::toDto);
+    }
+
+    public Page<ProductResponseDto> getProductsByStatusAndCategory(ProductStatus status, ProductCategory category, Pageable pageable) {
+        return productRepository.findByStatusAndCategory(status, category, pageable).map(this::toDto);
+    }
+
+    public Page<ProductResponseDto> getProducts(ProductStatus status, ProductCategory category, String search, Pageable pageable) {
+        String normalizedSearch = (search != null && !search.isBlank()) ? search.trim() : null;
+        if (normalizedSearch != null) {
+            return productRepository.findFiltered(status, category, normalizedSearch, pageable).map(this::toDto);
+        }
+        if (status != null && category != null) {
+            return productRepository.findByStatusAndCategory(status, category, pageable).map(this::toDto);
+        }
+        if (status != null) {
+            return productRepository.findByStatus(status, pageable).map(this::toDto);
+        }
+        if (category != null) {
+            return productRepository.findByCategory(category, pageable).map(this::toDto);
+        }
+        return productRepository.findAll(pageable).map(this::toDto);
+    }
+
     public Optional<ProductResponseDto> getProductByProductNumber(String productNumber) {
         return productRepository.findById(productNumber).map(this::toDto);
+    }
+
+    @Transactional
+    public void deleteProduct(String productNumber) {
+        if (!productRepository.existsById(productNumber)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                    "Product not found: " + productNumber);
+        }
+        productRepository.deleteById(productNumber);
     }
 
     @Transactional
@@ -53,7 +88,9 @@ public class ProductService {
                 request.price(),
                 request.currency(),
                 request.status(),
-                request.featured()
+                request.featured(),
+                request.imageUrl(),
+                request.category()
         );
 
         return toDto(productRepository.save(product));
@@ -73,7 +110,9 @@ public class ProductService {
                 request.price(),
                 request.currency(),
                 request.status(),
-                request.featured()
+                request.featured(),
+                request.imageUrl(),
+                request.category()
         );
 
         return toDto(productRepository.save(updated));
@@ -92,7 +131,9 @@ public class ProductService {
                 existing.getPrice(),
                 existing.getCurrency(),
                 existing.getStatus(),
-                request.featured()
+                request.featured(),
+                existing.getImageUrl(),
+                existing.getCategory()
         );
 
         return toDto(productRepository.save(updated));
@@ -111,7 +152,9 @@ public class ProductService {
                 existing.getPrice(),
                 existing.getCurrency(),
                 request.status(),
-                existing.isFeatured()
+                existing.isFeatured(),
+                existing.getImageUrl(),
+                existing.getCategory()
         );
 
         return toDto(productRepository.save(updated));
@@ -125,7 +168,11 @@ public class ProductService {
                 product.getPrice(),
                 product.getCurrency(),
                 product.getStatus(),
-                product.isFeatured()
+                product.isFeatured(),
+                product.getImageUrl(),
+                product.getCategory(),
+                product.getCreatedAt(),
+                product.getUpdatedAt()
         );
     }
 }

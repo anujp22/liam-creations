@@ -1,5 +1,6 @@
 package com.codewithanuj.catalog.product.dto;
 
+import com.codewithanuj.catalog.product.model.ProductCategory;
 import com.codewithanuj.catalog.product.model.ProductStatus;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
@@ -19,6 +20,9 @@ public record ProductUpdateRequest(
         String currency,
         @NotNull
         ProductStatus status,
-        boolean featured
+        boolean featured,
+        String imageUrl,
+        @NotNull
+        ProductCategory category
 ) {
 }

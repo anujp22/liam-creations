@@ -28,6 +28,9 @@ export function ProductDetailPage() {
         ← Back to shop
       </button>
       <div className="detail-card">
+        {product.imageUrl && (
+          <img src={product.imageUrl} alt={product.title} className="detail-image" />
+        )}
         <span className="product-status">{product.status.replace(/_/g, ' ')}</span>
         {product.featured && <span className="product-featured">Featured</span>}
         <h2 className="detail-title">{product.title}</h2>
@@ -37,6 +40,16 @@ export function ProductDetailPage() {
             ₹{Number(product.price).toLocaleString('en-IN')}
           </span>
         </div>
+        {product.createdAt && (
+          <p className="detail-meta">
+            Added {new Date(product.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
+          </p>
+        )}
+        {product.updatedAt && product.updatedAt !== product.createdAt && (
+          <p className="detail-meta">
+            Updated {new Date(product.updatedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
+          </p>
+        )}
       </div>
     </div>
   );

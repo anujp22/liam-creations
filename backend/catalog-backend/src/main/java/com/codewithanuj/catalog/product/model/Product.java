@@ -5,8 +5,12 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Column;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 
 @Entity
 @Table(name = "products")
@@ -21,6 +25,15 @@ public class Product {
     @Enumerated(EnumType.STRING)
     private ProductStatus status;
     private boolean featured;
+    private String imageUrl;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ProductCategory category;
+    @CreationTimestamp
+    @Column(updatable = false)
+    private Instant createdAt;
+    @UpdateTimestamp
+    private Instant updatedAt;
 
     protected Product() {
     }
@@ -32,7 +45,9 @@ public class Product {
             BigDecimal price,
             String currency,
             ProductStatus status,
-            boolean featured
+            boolean featured,
+            String imageUrl,
+            ProductCategory category
     ) {
         this.productNumber = productNumber;
         this.title = title;
@@ -41,6 +56,8 @@ public class Product {
         this.currency = currency;
         this.status = status;
         this.featured = featured;
+        this.imageUrl = imageUrl;
+        this.category = category;
     }
 
     public String getProductNumber() { return productNumber; }
@@ -50,4 +67,8 @@ public class Product {
     public String getCurrency() { return currency; }
     public ProductStatus getStatus() { return status; }
     public boolean isFeatured() { return featured; }
+    public String getImageUrl() { return imageUrl; }
+    public ProductCategory getCategory() { return category; }
+    public Instant getCreatedAt() { return createdAt; }
+    public Instant getUpdatedAt() { return updatedAt; }
 }

@@ -1,6 +1,7 @@
 package com.codewithanuj.catalog.product.controller;
 
 import com.codewithanuj.catalog.product.dto.ProductResponseDto;
+import com.codewithanuj.catalog.product.model.ProductCategory;
 import com.codewithanuj.catalog.product.model.ProductStatus;
 import com.codewithanuj.catalog.product.service.ProductService;
 import org.junit.jupiter.api.Test;
@@ -18,6 +19,8 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -34,12 +37,12 @@ class ProductControllerTest {
     private ProductService productService;
 
     @Test
-    void getProductsReturnsAllProductsWhenNoStatusIsProvided() throws Exception {
+    void getProductsReturnsAllProductsWhenNoFiltersProvided() throws Exception {
         var items = List.of(
                 product("PRD-001", ProductStatus.IN_STOCK),
                 product("PRD-002", ProductStatus.OUT_OF_STOCK)
         );
-        when(productService.getAllProducts(any(Pageable.class)))
+        when(productService.getProducts(isNull(), isNull(), isNull(), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(items));
 
         mockMvc.perform(get("/api/products"))
@@ -53,7 +56,7 @@ class ProductControllerTest {
     @Test
     void getProductsReturnsFilteredProductsWhenStatusIsProvided() throws Exception {
         var items = List.of(product("PRD-001", ProductStatus.IN_STOCK));
-        when(productService.getProductsByStatus(any(ProductStatus.class), any(Pageable.class)))
+        when(productService.getProducts(eq(ProductStatus.IN_STOCK), isNull(), isNull(), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(items));
 
         mockMvc.perform(get("/api/products").param("status", "IN_STOCK"))
@@ -61,6 +64,18 @@ class ProductControllerTest {
                 .andExpect(jsonPath("$.content.length()").value(1))
                 .andExpect(jsonPath("$.content[0].productNumber").value("PRD-001"))
                 .andExpect(jsonPath("$.content[0].status").value("IN_STOCK"));
+    }
+
+    @Test
+    void getProductsReturnsSearchResultsWhenSearchParamProvided() throws Exception {
+        var items = List.of(product("PRD-001", ProductStatus.IN_STOCK));
+        when(productService.getProducts(isNull(), isNull(), eq("silk"), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(items));
+
+        mockMvc.perform(get("/api/products").param("search", "silk"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].productNumber").value("PRD-001"));
     }
 
     @Test
@@ -82,7 +97,7 @@ class ProductControllerTest {
 
     @Test
     void getProductsReturnsAllProductsWhenStatusIsEmptyString() throws Exception {
-        when(productService.getAllProducts(any(Pageable.class)))
+        when(productService.getProducts(isNull(), isNull(), isNull(), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(product("PRD-001", ProductStatus.IN_STOCK))));
 
         mockMvc.perform(get("/api/products").param("status", ""))
@@ -116,7 +131,7 @@ class ProductControllerTest {
     private ProductResponseDto product(String productNumber, ProductStatus status) {
         return new ProductResponseDto(
                 productNumber, "Sample Product", "A product",
-                new BigDecimal("1999.00"), "INR", status, true
+                new BigDecimal("1999.00"), "INR", status, true, null, ProductCategory.JEWELLERY, null, null
         );
     }
 

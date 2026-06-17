@@ -8,6 +8,7 @@ import com.codewithanuj.catalog.product.dto.UpdateStatusRequest;
 import com.codewithanuj.catalog.product.service.ProductService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -25,6 +26,12 @@ public class AdminProductController {
 
     public AdminProductController(ProductService productService) {
         this.productService = productService;
+    }
+
+    @DeleteMapping("/{productNumber}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteProduct(@PathVariable String productNumber) {
+        productService.deleteProduct(productNumber);
     }
 
     @PostMapping
