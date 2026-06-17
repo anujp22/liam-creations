@@ -34,16 +34,8 @@ export function ProductDetailPage() {
         <p className="detail-description">{product.description}</p>
         <div className="detail-footer">
           <span className="product-price">
-            {product.currency} {Number(product.price).toFixed(2)}
+            ₹{Number(product.price).toLocaleString('en-IN')}
           </span>
-          <a
-            href={product.instagramPostUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="product-link"
-          >
-            View on Instagram ↗
-          </a>
         </div>
       </div>
     </div>

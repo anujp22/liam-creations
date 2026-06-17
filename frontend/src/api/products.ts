@@ -1,4 +1,4 @@
-export type ProductStatus = 'IN_STOCK' | 'OUT_OF_STOCK' | 'DISCONTINUED';
+export type ProductStatus = 'IN_STOCK' | 'OUT_OF_STOCK' | 'BUILT_ON_REQUEST';
 
 export interface Product {
   productNumber: string;
@@ -8,7 +8,6 @@ export interface Product {
   currency: string;
   status: ProductStatus;
   featured: boolean;
-  instagramPostUrl: string;
 }
 
 interface PagedResponse<T> {

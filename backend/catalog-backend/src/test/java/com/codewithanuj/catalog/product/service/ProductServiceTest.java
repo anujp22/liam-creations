@@ -91,9 +91,8 @@ class ProductServiceTest {
     @Test
     void createProductSavesAndReturnsDto() {
         ProductCreateRequest request = new ProductCreateRequest(
-                "PRD-010", "New Mug", "A nice mug",
-                new BigDecimal("29.99"), "USD", ProductStatus.IN_STOCK, true,
-                "https://instagram.com/p/010"
+                "PRD-010", "Banarasi Silk Saree", "Hand-woven pure silk",
+                new BigDecimal("8500.00"), "INR", ProductStatus.IN_STOCK, true
         );
 
         when(productRepository.existsById("PRD-010")).thenReturn(false);
@@ -108,8 +107,7 @@ class ProductServiceTest {
     void createProductThrows409WhenProductAlreadyExists() {
         ProductCreateRequest request = new ProductCreateRequest(
                 "PRD-001", "Duplicate", "Already exists",
-                new BigDecimal("9.99"), "USD", ProductStatus.IN_STOCK, false,
-                "https://instagram.com/p/001"
+                new BigDecimal("999.00"), "INR", ProductStatus.IN_STOCK, false
         );
 
         when(productRepository.existsById("PRD-001")).thenReturn(true);
@@ -122,9 +120,8 @@ class ProductServiceTest {
     @Test
     void updateProductSavesAndReturnsDto() {
         ProductUpdateRequest request = new ProductUpdateRequest(
-                "Updated Mug", "Updated desc",
-                new BigDecimal("34.99"), "USD", ProductStatus.OUT_OF_STOCK, false,
-                "https://instagram.com/p/001"
+                "Updated Saree", "Updated desc",
+                new BigDecimal("9500.00"), "INR", ProductStatus.OUT_OF_STOCK, false
         );
 
         when(productRepository.existsById("PRD-001")).thenReturn(true);
@@ -140,8 +137,7 @@ class ProductServiceTest {
     void updateProductThrows404WhenProductNotFound() {
         ProductUpdateRequest request = new ProductUpdateRequest(
                 "Ghost", "Missing",
-                new BigDecimal("9.99"), "USD", ProductStatus.IN_STOCK, false,
-                "https://instagram.com/p/999"
+                new BigDecimal("999.00"), "INR", ProductStatus.IN_STOCK, false
         );
 
         when(productRepository.existsById("PRD-999")).thenReturn(false);
@@ -198,8 +194,7 @@ class ProductServiceTest {
     private Product product(String productNumber, ProductStatus status) {
         return new Product(
                 productNumber, "Sample Product", "A product",
-                new BigDecimal("19.99"), "USD", status, true,
-                "https://instagram.com/p/" + productNumber.toLowerCase()
+                new BigDecimal("1999.00"), "INR", status, true
         );
     }
 }

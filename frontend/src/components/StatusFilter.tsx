@@ -9,7 +9,7 @@ const OPTIONS: { label: string; value: ProductStatus | undefined }[] = [
   { label: 'All', value: undefined },
   { label: 'In Stock', value: 'IN_STOCK' },
   { label: 'Out of Stock', value: 'OUT_OF_STOCK' },
-  { label: 'Discontinued', value: 'DISCONTINUED' },
+  { label: 'Built on Demand', value: 'BUILT_ON_REQUEST' },
 ];
 
 export function StatusFilter({ active, onChange }: Props) {

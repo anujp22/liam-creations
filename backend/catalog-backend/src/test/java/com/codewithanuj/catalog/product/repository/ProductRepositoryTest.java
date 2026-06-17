@@ -13,6 +13,8 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
+import org.junit.jupiter.api.BeforeEach;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
@@ -21,17 +23,16 @@ class ProductRepositoryTest {
     @Autowired
     private ProductRepository productRepository;
 
+    @BeforeEach
+    void clearProducts() {
+        productRepository.deleteAll();
+    }
+
     @Test
     void saveAndFindByIdReturnsProduct() {
         Product product = new Product(
-                "PRD-001",
-                "Clay Mug",
-                "Handmade clay mug",
-                new BigDecimal("24.99"),
-                "USD",
-                ProductStatus.IN_STOCK,
-                true,
-                "https://instagram.com/p/001"
+                "PRD-001", "Kanjeevaram Saree", "Handwoven silk saree",
+                new BigDecimal("18500.00"), "INR", ProductStatus.IN_STOCK, true
         );
 
         productRepository.save(product);
@@ -39,20 +40,20 @@ class ProductRepositoryTest {
         Optional<Product> found = productRepository.findById("PRD-001");
 
         assertThat(found).isPresent();
-        assertThat(found.get().getTitle()).isEqualTo("Clay Mug");
+        assertThat(found.get().getTitle()).isEqualTo("Kanjeevaram Saree");
         assertThat(found.get().getStatus()).isEqualTo(ProductStatus.IN_STOCK);
-        assertThat(found.get().getPrice()).isEqualByComparingTo("24.99");
+        assertThat(found.get().getPrice()).isEqualByComparingTo("18500.00");
     }
 
     @Test
     void findAllReturnsAllSavedProducts() {
         productRepository.save(new Product(
-                "PRD-001", "Clay Mug", "Desc", new BigDecimal("24.99"),
-                "USD", ProductStatus.IN_STOCK, true, "https://instagram.com/p/001"
+                "PRD-001", "Kanjeevaram Saree", "Desc",
+                new BigDecimal("18500.00"), "INR", ProductStatus.IN_STOCK, true
         ));
         productRepository.save(new Product(
-                "PRD-002", "Desk Lamp", "Desc", new BigDecimal("49.99"),
-                "USD", ProductStatus.OUT_OF_STOCK, false, "https://instagram.com/p/002"
+                "PRD-002", "Haldi Package", "Desc",
+                new BigDecimal("2499.00"), "INR", ProductStatus.OUT_OF_STOCK, false
         ));
 
         List<Product> products = productRepository.findAll();
@@ -72,12 +73,12 @@ class ProductRepositoryTest {
     @Test
     void findByStatusReturnsOnlyProductsWithMatchingStatus() {
         productRepository.save(new Product(
-                "PRD-001", "Clay Mug", "Desc", new BigDecimal("24.99"),
-                "USD", ProductStatus.IN_STOCK, true, "https://instagram.com/p/001"
+                "PRD-001", "Kanjeevaram Saree", "Desc",
+                new BigDecimal("18500.00"), "INR", ProductStatus.IN_STOCK, true
         ));
         productRepository.save(new Product(
-                "PRD-002", "Desk Lamp", "Desc", new BigDecimal("49.99"),
-                "USD", ProductStatus.OUT_OF_STOCK, false, "https://instagram.com/p/002"
+                "PRD-002", "Haldi Package", "Desc",
+                new BigDecimal("2499.00"), "INR", ProductStatus.OUT_OF_STOCK, false
         ));
 
         Page<Product> inStock = productRepository.findByStatus(ProductStatus.IN_STOCK, PageRequest.of(0, 20));

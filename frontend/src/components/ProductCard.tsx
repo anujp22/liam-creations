@@ -13,7 +13,7 @@ export function ProductCard({ product }: Props) {
       <p className="product-description">{product.description}</p>
       <div className="product-footer">
         <span className="product-price">
-          {product.currency} {Number(product.price).toFixed(2)}
+          ₹{Number(product.price).toLocaleString('en-IN')}
         </span>
         {product.featured && <span className="product-featured">Featured</span>}
       </div>

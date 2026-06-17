@@ -21,7 +21,6 @@ public class Product {
     @Enumerated(EnumType.STRING)
     private ProductStatus status;
     private boolean featured;
-    private String instagramPostUrl;
 
     protected Product() {
     }
@@ -33,8 +32,7 @@ public class Product {
             BigDecimal price,
             String currency,
             ProductStatus status,
-            boolean featured,
-            String instagramPostUrl
+            boolean featured
     ) {
         this.productNumber = productNumber;
         this.title = title;
@@ -43,38 +41,13 @@ public class Product {
         this.currency = currency;
         this.status = status;
         this.featured = featured;
-        this.instagramPostUrl = instagramPostUrl;
     }
 
-    public String getProductNumber() {
-        return productNumber;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public BigDecimal getPrice() {
-        return price;
-    }
-
-    public String getCurrency() {
-        return currency;
-    }
-
-    public ProductStatus getStatus() {
-        return status;
-    }
-
-    public boolean isFeatured() {
-        return featured;
-    }
-
-    public String getInstagramPostUrl() {
-        return instagramPostUrl;
-    }
+    public String getProductNumber() { return productNumber; }
+    public String getTitle() { return title; }
+    public String getDescription() { return description; }
+    public BigDecimal getPrice() { return price; }
+    public String getCurrency() { return currency; }
+    public ProductStatus getStatus() { return status; }
+    public boolean isFeatured() { return featured; }
 }
