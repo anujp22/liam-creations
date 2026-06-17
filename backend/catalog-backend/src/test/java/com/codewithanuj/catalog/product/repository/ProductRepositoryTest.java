@@ -140,19 +140,20 @@ class ProductRepositoryTest {
     }
 
     @Test
-    void findFilteredWithNullSearchReturnsAll() {
+    void findFilteredWithStatusFilterAndSearchReturnsMatch() {
         productRepository.save(new Product(
                 "PRD-001", "Saree", "Desc",
                 new BigDecimal("1000.00"), "INR", ProductStatus.IN_STOCK, false, null, ProductCategory.BRIDAL_SAREES
         ));
         productRepository.save(new Product(
                 "PRD-002", "Lehenga", "Desc",
-                new BigDecimal("2000.00"), "INR", ProductStatus.IN_STOCK, false, null, ProductCategory.BRIDAL_LEHENGAS
+                new BigDecimal("2000.00"), "INR", ProductStatus.OUT_OF_STOCK, false, null, ProductCategory.BRIDAL_LEHENGAS
         ));
 
-        Page<Product> result = productRepository.findFiltered(null, null, null, PageRequest.of(0, 20));
+        Page<Product> result = productRepository.findFiltered(ProductStatus.IN_STOCK, null, "saree", PageRequest.of(0, 20));
 
-        assertThat(result.getTotalElements()).isEqualTo(2);
+        assertThat(result.getTotalElements()).isEqualTo(1);
+        assertThat(result.getContent().get(0).getProductNumber()).isEqualTo("PRD-001");
     }
 
     @Test

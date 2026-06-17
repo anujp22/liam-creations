@@ -46,7 +46,19 @@ public class ProductService {
 
     public Page<ProductResponseDto> getProducts(ProductStatus status, ProductCategory category, String search, Pageable pageable) {
         String normalizedSearch = (search != null && !search.isBlank()) ? search.trim() : null;
-        return productRepository.findFiltered(status, category, normalizedSearch, pageable).map(this::toDto);
+        if (normalizedSearch != null) {
+            return productRepository.findFiltered(status, category, normalizedSearch, pageable).map(this::toDto);
+        }
+        if (status != null && category != null) {
+            return productRepository.findByStatusAndCategory(status, category, pageable).map(this::toDto);
+        }
+        if (status != null) {
+            return productRepository.findByStatus(status, pageable).map(this::toDto);
+        }
+        if (category != null) {
+            return productRepository.findByCategory(category, pageable).map(this::toDto);
+        }
+        return productRepository.findAll(pageable).map(this::toDto);
     }
 
     public Optional<ProductResponseDto> getProductByProductNumber(String productNumber) {

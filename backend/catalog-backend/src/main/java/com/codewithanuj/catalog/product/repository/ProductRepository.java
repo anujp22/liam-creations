@@ -15,10 +15,11 @@ public interface ProductRepository extends JpaRepository<Product, String> {
     Page<Product> findByCategory(ProductCategory category, Pageable pageable);
     Page<Product> findByStatusAndCategory(ProductStatus status, ProductCategory category, Pageable pageable);
 
+    // search is guaranteed non-null when called — callers must never pass null here
     @Query("SELECT p FROM Product p WHERE " +
            "(:status IS NULL OR p.status = :status) AND " +
            "(:category IS NULL OR p.category = :category) AND " +
-           "(:search IS NULL OR LOWER(p.title) LIKE LOWER(CONCAT('%', :search, '%')) " +
+           "(LOWER(p.title) LIKE LOWER(CONCAT('%', :search, '%')) " +
            "OR LOWER(p.description) LIKE LOWER(CONCAT('%', :search, '%')))")
     Page<Product> findFiltered(
             @Param("status") ProductStatus status,

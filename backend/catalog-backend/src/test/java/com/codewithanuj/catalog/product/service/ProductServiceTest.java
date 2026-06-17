@@ -103,9 +103,9 @@ class ProductServiceTest {
     }
 
     @Test
-    void getProductsNormalisesBlankSearchToNull() {
+    void getProductsNormalisesBlankSearchToNullAndFallsBackToFindAll() {
         Pageable pageable = PageRequest.of(0, 20);
-        when(productRepository.findFiltered(null, null, null, pageable))
+        when(productRepository.findAll(pageable))
                 .thenReturn(new PageImpl<>(List.of(product("PRD-001", ProductStatus.IN_STOCK))));
 
         Page<ProductResponseDto> result = productService.getProducts(null, null, "   ", pageable);
