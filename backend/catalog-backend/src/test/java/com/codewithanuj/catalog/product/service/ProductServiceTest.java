@@ -99,7 +99,7 @@ class ProductServiceTest {
         when(productRepository.findFiltered(null, null, "silk", pageable))
                 .thenReturn(new PageImpl<>(List.of(product("PRD-001", ProductStatus.IN_STOCK))));
 
-        Page<ProductResponseDto> result = productService.getProducts(null, null, "silk", pageable);
+        Page<ProductResponseDto> result = productService.getProducts(null, null, "silk", false, pageable);
 
         assertThat(result.getTotalElements()).isEqualTo(1);
         assertThat(result.getContent().get(0).productNumber()).isEqualTo("PRD-001");
@@ -111,7 +111,7 @@ class ProductServiceTest {
         when(productRepository.findByDeletedFalse(pageable))
                 .thenReturn(new PageImpl<>(List.of(product("PRD-001", ProductStatus.IN_STOCK))));
 
-        Page<ProductResponseDto> result = productService.getProducts(null, null, "   ", pageable);
+        Page<ProductResponseDto> result = productService.getProducts(null, null, "   ", false, pageable);
 
         assertThat(result.getTotalElements()).isEqualTo(1);
     }
@@ -179,7 +179,7 @@ class ProductServiceTest {
     void createProductAssignsGeneratedNumberSavesAndReturnsDto() {
         ProductCreateRequest request = new ProductCreateRequest(
                 "Banarasi Silk Saree", "Hand-woven pure silk",
-                new BigDecimal("8500.00"), "INR", ProductStatus.IN_STOCK, true, null, ProductCategory.BRIDAL_SAREES
+                new BigDecimal("8500.00"), "INR", ProductStatus.IN_STOCK, true, null, ProductCategory.BRIDAL_SAREES, null
         );
 
         when(productNumberGenerator.next()).thenReturn("PRD-010");
@@ -194,7 +194,7 @@ class ProductServiceTest {
     void updateProductSavesAndReturnsDto() {
         ProductUpdateRequest request = new ProductUpdateRequest(
                 "Updated Saree", "Updated desc",
-                new BigDecimal("9500.00"), "INR", ProductStatus.OUT_OF_STOCK, false, null, ProductCategory.BRIDAL_SAREES
+                new BigDecimal("9500.00"), "INR", ProductStatus.OUT_OF_STOCK, false, null, ProductCategory.BRIDAL_SAREES, null
         );
 
         when(productRepository.existsById("PRD-001")).thenReturn(true);
@@ -210,7 +210,7 @@ class ProductServiceTest {
     void updateProductThrows404WhenProductNotFound() {
         ProductUpdateRequest request = new ProductUpdateRequest(
                 "Ghost", "Missing",
-                new BigDecimal("999.00"), "INR", ProductStatus.IN_STOCK, false, null, ProductCategory.JEWELLERY
+                new BigDecimal("999.00"), "INR", ProductStatus.IN_STOCK, false, null, ProductCategory.JEWELLERY, null
         );
 
         when(productRepository.existsById("PRD-999")).thenReturn(false);

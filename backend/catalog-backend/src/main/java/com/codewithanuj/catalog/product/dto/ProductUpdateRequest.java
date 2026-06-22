@@ -23,6 +23,7 @@ public record ProductUpdateRequest(
         boolean featured,
         String imageUrl,
         @NotNull
-        ProductCategory category
+        ProductCategory category,
+        BigDecimal salePrice
 ) {
 }

@@ -30,9 +30,10 @@ public class ProductController {
             @RequestParam(required = false) ProductStatus status,
             @RequestParam(required = false) ProductCategory category,
             @RequestParam(required = false) String search,
+            @RequestParam(required = false, defaultValue = "false") boolean onSale,
             @PageableDefault(size = 20)
             @SortDefault(sort = "title", direction = Sort.Direction.ASC) Pageable pageable) {
-        return productService.getProducts(status, category, search, pageable);
+        return productService.getProducts(status, category, search, onSale, pageable);
     }
 
     @GetMapping("/api/products/{productNumber}")

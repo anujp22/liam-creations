@@ -20,6 +20,9 @@ public interface ProductRepository extends JpaRepository<Product, String> {
     // Soft-deleted products, for the admin Deleted tab.
     Page<Product> findByDeletedTrue(Pageable pageable);
 
+    // On-sale products for the storefront Sale section.
+    Page<Product> findBySalePriceIsNotNullAndDeletedFalse(Pageable pageable);
+
     // search is guaranteed non-null when called — callers must never pass null here
     @Query("SELECT p FROM Product p WHERE p.deleted = false AND " +
            "(:status IS NULL OR p.status = :status) AND " +

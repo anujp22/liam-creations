@@ -46,7 +46,10 @@ public class ProductService {
         return productRepository.findByStatusAndCategoryAndDeletedFalse(status, category, pageable).map(this::toDto);
     }
 
-    public Page<ProductResponseDto> getProducts(ProductStatus status, ProductCategory category, String search, Pageable pageable) {
+    public Page<ProductResponseDto> getProducts(ProductStatus status, ProductCategory category, String search, boolean onSale, Pageable pageable) {
+        if (onSale) {
+            return productRepository.findBySalePriceIsNotNullAndDeletedFalse(pageable).map(this::toDto);
+        }
         String normalizedSearch = (search != null && !search.isBlank()) ? search.trim() : null;
         if (normalizedSearch != null) {
             return productRepository.findFiltered(status, category, normalizedSearch, pageable).map(this::toDto);
@@ -103,6 +106,8 @@ public class ProductService {
 
     @Transactional
     public ProductResponseDto createProduct(ProductCreateRequest request) {
+        validateSalePrice(request.price(), request.salePrice());
+
         Product product = new Product(
                 productNumberGenerator.next(),
                 request.title(),
@@ -114,6 +119,7 @@ public class ProductService {
                 request.imageUrl(),
                 request.category()
         );
+        product.setSalePrice(request.salePrice());
 
         return toDto(productRepository.save(product));
     }
@@ -124,6 +130,7 @@ public class ProductService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                     "Product not found: " + productNumber);
         }
+        validateSalePrice(request.price(), request.salePrice());
 
         Product updated = new Product(
                 productNumber,
@@ -136,6 +143,7 @@ public class ProductService {
                 request.imageUrl(),
                 request.category()
         );
+        updated.setSalePrice(request.salePrice());
 
         return toDto(productRepository.save(updated));
     }
@@ -157,6 +165,8 @@ public class ProductService {
                 existing.getImageUrl(),
                 existing.getCategory()
         );
+        updated.setSalePrice(existing.getSalePrice());
+        updated.setDeleted(existing.isDeleted());
 
         return toDto(productRepository.save(updated));
     }
@@ -178,6 +188,8 @@ public class ProductService {
                 existing.getImageUrl(),
                 existing.getCategory()
         );
+        updated.setSalePrice(existing.getSalePrice());
+        updated.setDeleted(existing.isDeleted());
 
         return toDto(productRepository.save(updated));
     }
@@ -194,7 +206,18 @@ public class ProductService {
                 product.getImageUrl(),
                 product.getCategory(),
                 product.getCreatedAt(),
-                product.getUpdatedAt()
+                product.getUpdatedAt(),
+                product.getSalePrice()
         );
+    }
+
+    private void validateSalePrice(java.math.BigDecimal price, java.math.BigDecimal salePrice) {
+        if (salePrice == null) {
+            return;
+        }
+        if (salePrice.signum() <= 0 || salePrice.compareTo(price) >= 0) {
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
+                    "salePrice must be greater than 0 and less than price");
+        }
     }
 }

@@ -21,6 +21,7 @@ public class Product {
     private String title;
     private String description;
     private BigDecimal price;
+    private BigDecimal salePrice;
     private String currency;
     @Enumerated(EnumType.STRING)
     private ProductStatus status;
@@ -66,6 +67,8 @@ public class Product {
     public String getTitle() { return title; }
     public String getDescription() { return description; }
     public BigDecimal getPrice() { return price; }
+    public BigDecimal getSalePrice() { return salePrice; }
+    public void setSalePrice(BigDecimal salePrice) { this.salePrice = salePrice; }
     public String getCurrency() { return currency; }
     public ProductStatus getStatus() { return status; }
     public boolean isFeatured() { return featured; }

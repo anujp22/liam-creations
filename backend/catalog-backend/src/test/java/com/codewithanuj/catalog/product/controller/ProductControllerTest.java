@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.when;
@@ -42,7 +43,7 @@ class ProductControllerTest {
                 product("PRD-001", ProductStatus.IN_STOCK),
                 product("PRD-002", ProductStatus.OUT_OF_STOCK)
         );
-        when(productService.getProducts(isNull(), isNull(), isNull(), any(Pageable.class)))
+        when(productService.getProducts(isNull(), isNull(), isNull(), anyBoolean(), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(items));
 
         mockMvc.perform(get("/api/products"))
@@ -56,7 +57,7 @@ class ProductControllerTest {
     @Test
     void getProductsReturnsFilteredProductsWhenStatusIsProvided() throws Exception {
         var items = List.of(product("PRD-001", ProductStatus.IN_STOCK));
-        when(productService.getProducts(eq(ProductStatus.IN_STOCK), isNull(), isNull(), any(Pageable.class)))
+        when(productService.getProducts(eq(ProductStatus.IN_STOCK), isNull(), isNull(), anyBoolean(), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(items));
 
         mockMvc.perform(get("/api/products").param("status", "IN_STOCK"))
@@ -69,7 +70,7 @@ class ProductControllerTest {
     @Test
     void getProductsReturnsSearchResultsWhenSearchParamProvided() throws Exception {
         var items = List.of(product("PRD-001", ProductStatus.IN_STOCK));
-        when(productService.getProducts(isNull(), isNull(), eq("silk"), any(Pageable.class)))
+        when(productService.getProducts(isNull(), isNull(), eq("silk"), anyBoolean(), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(items));
 
         mockMvc.perform(get("/api/products").param("search", "silk"))
@@ -97,7 +98,7 @@ class ProductControllerTest {
 
     @Test
     void getProductsReturnsAllProductsWhenStatusIsEmptyString() throws Exception {
-        when(productService.getProducts(isNull(), isNull(), isNull(), any(Pageable.class)))
+        when(productService.getProducts(isNull(), isNull(), isNull(), anyBoolean(), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(product("PRD-001", ProductStatus.IN_STOCK))));
 
         mockMvc.perform(get("/api/products").param("status", ""))
@@ -131,7 +132,7 @@ class ProductControllerTest {
     private ProductResponseDto product(String productNumber, ProductStatus status) {
         return new ProductResponseDto(
                 productNumber, "Sample Product", "A product",
-                new BigDecimal("1999.00"), "INR", status, true, null, ProductCategory.JEWELLERY, null, null
+                new BigDecimal("1999.00"), "INR", status, true, null, ProductCategory.JEWELLERY, null, null, null
         );
     }
 

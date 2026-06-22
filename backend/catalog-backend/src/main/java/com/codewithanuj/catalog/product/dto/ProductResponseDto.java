@@ -17,6 +17,7 @@ public record ProductResponseDto(
         String imageUrl,
         ProductCategory category,
         Instant createdAt,
-        Instant updatedAt
+        Instant updatedAt,
+        BigDecimal salePrice
 ) {
 }

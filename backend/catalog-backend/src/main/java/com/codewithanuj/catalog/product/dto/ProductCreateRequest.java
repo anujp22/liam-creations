@@ -24,6 +24,7 @@ public record ProductCreateRequest(
         boolean featured,
         String imageUrl,
         @NotNull
-        ProductCategory category
+        ProductCategory category,
+        BigDecimal salePrice
 ) {
 }
