@@ -82,7 +82,7 @@ class ProductRepositoryTest {
                 new BigDecimal("2499.00"), "INR", ProductStatus.OUT_OF_STOCK, false, null, ProductCategory.HALDI_MEHENDI
         ));
 
-        Page<Product> inStock = productRepository.findByStatus(ProductStatus.IN_STOCK, PageRequest.of(0, 20));
+        Page<Product> inStock = productRepository.findByStatusAndDeletedFalse(ProductStatus.IN_STOCK, PageRequest.of(0, 20));
 
         assertThat(inStock.getTotalElements()).isEqualTo(1);
         assertThat(inStock.getContent().get(0).getProductNumber()).isEqualTo("PRD-001");
@@ -99,7 +99,7 @@ class ProductRepositoryTest {
                 new BigDecimal("2499.00"), "INR", ProductStatus.IN_STOCK, false, null, ProductCategory.HALDI_MEHENDI
         ));
 
-        Page<Product> sarees = productRepository.findByCategory(ProductCategory.BRIDAL_SAREES, PageRequest.of(0, 20));
+        Page<Product> sarees = productRepository.findByCategoryAndDeletedFalse(ProductCategory.BRIDAL_SAREES, PageRequest.of(0, 20));
 
         assertThat(sarees.getTotalElements()).isEqualTo(1);
         assertThat(sarees.getContent().get(0).getProductNumber()).isEqualTo("PRD-001");
@@ -171,10 +171,31 @@ class ProductRepositoryTest {
                 new BigDecimal("2499.00"), "INR", ProductStatus.IN_STOCK, false, null, ProductCategory.HALDI_MEHENDI
         ));
 
-        Page<Product> result = productRepository.findByStatusAndCategory(
+        Page<Product> result = productRepository.findByStatusAndCategoryAndDeletedFalse(
                 ProductStatus.IN_STOCK, ProductCategory.BRIDAL_SAREES, PageRequest.of(0, 20));
 
         assertThat(result.getTotalElements()).isEqualTo(1);
         assertThat(result.getContent().get(0).getProductNumber()).isEqualTo("PRD-001");
+    }
+
+    @Test
+    void deletedProductsAreExcludedFromActiveAndReturnedByDeletedTrue() {
+        Product active = new Product(
+                "PRD-001", "Active Saree", "Desc",
+                new BigDecimal("1000.00"), "INR", ProductStatus.IN_STOCK, false, null, ProductCategory.BRIDAL_SAREES
+        );
+        Product removed = new Product(
+                "PRD-002", "Removed Saree", "Desc",
+                new BigDecimal("2000.00"), "INR", ProductStatus.IN_STOCK, false, null, ProductCategory.BRIDAL_SAREES
+        );
+        removed.setDeleted(true);
+        productRepository.save(active);
+        productRepository.save(removed);
+
+        Page<Product> activeOnly = productRepository.findByDeletedFalse(PageRequest.of(0, 20));
+        Page<Product> deletedOnly = productRepository.findByDeletedTrue(PageRequest.of(0, 20));
+
+        assertThat(activeOnly.getContent()).extracting(Product::getProductNumber).containsExactly("PRD-001");
+        assertThat(deletedOnly.getContent()).extracting(Product::getProductNumber).containsExactly("PRD-002");
     }
 }

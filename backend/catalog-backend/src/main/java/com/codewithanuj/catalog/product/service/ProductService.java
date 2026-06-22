@@ -31,19 +31,19 @@ public class ProductService {
     }
 
     public Page<ProductResponseDto> getAllProducts(Pageable pageable) {
-        return productRepository.findAll(pageable).map(this::toDto);
+        return productRepository.findByDeletedFalse(pageable).map(this::toDto);
     }
 
     public Page<ProductResponseDto> getProductsByStatus(ProductStatus status, Pageable pageable) {
-        return productRepository.findByStatus(status, pageable).map(this::toDto);
+        return productRepository.findByStatusAndDeletedFalse(status, pageable).map(this::toDto);
     }
 
     public Page<ProductResponseDto> getProductsByCategory(ProductCategory category, Pageable pageable) {
-        return productRepository.findByCategory(category, pageable).map(this::toDto);
+        return productRepository.findByCategoryAndDeletedFalse(category, pageable).map(this::toDto);
     }
 
     public Page<ProductResponseDto> getProductsByStatusAndCategory(ProductStatus status, ProductCategory category, Pageable pageable) {
-        return productRepository.findByStatusAndCategory(status, category, pageable).map(this::toDto);
+        return productRepository.findByStatusAndCategoryAndDeletedFalse(status, category, pageable).map(this::toDto);
     }
 
     public Page<ProductResponseDto> getProducts(ProductStatus status, ProductCategory category, String search, Pageable pageable) {
@@ -52,23 +52,48 @@ public class ProductService {
             return productRepository.findFiltered(status, category, normalizedSearch, pageable).map(this::toDto);
         }
         if (status != null && category != null) {
-            return productRepository.findByStatusAndCategory(status, category, pageable).map(this::toDto);
+            return productRepository.findByStatusAndCategoryAndDeletedFalse(status, category, pageable).map(this::toDto);
         }
         if (status != null) {
-            return productRepository.findByStatus(status, pageable).map(this::toDto);
+            return productRepository.findByStatusAndDeletedFalse(status, pageable).map(this::toDto);
         }
         if (category != null) {
-            return productRepository.findByCategory(category, pageable).map(this::toDto);
+            return productRepository.findByCategoryAndDeletedFalse(category, pageable).map(this::toDto);
         }
-        return productRepository.findAll(pageable).map(this::toDto);
+        return productRepository.findByDeletedFalse(pageable).map(this::toDto);
+    }
+
+    public Page<ProductResponseDto> getDeletedProducts(Pageable pageable) {
+        return productRepository.findByDeletedTrue(pageable).map(this::toDto);
     }
 
     public Optional<ProductResponseDto> getProductByProductNumber(String productNumber) {
         return productRepository.findById(productNumber).map(this::toDto);
     }
 
+    /** Soft delete — hides the product but keeps the row (and its reserved number). */
     @Transactional
     public void deleteProduct(String productNumber) {
+        Product product = productRepository.findById(productNumber)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Product not found: " + productNumber));
+        product.setDeleted(true);
+        productRepository.save(product);
+    }
+
+    /** Brings a soft-deleted product back into the active catalog. */
+    @Transactional
+    public ProductResponseDto restoreProduct(String productNumber) {
+        Product product = productRepository.findById(productNumber)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Product not found: " + productNumber));
+        product.setDeleted(false);
+        return toDto(productRepository.save(product));
+    }
+
+    /** Permanently removes the row. The product number stays reserved by the sequence. */
+    @Transactional
+    public void permanentlyDeleteProduct(String productNumber) {
         if (!productRepository.existsById(productNumber)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                     "Product not found: " + productNumber);

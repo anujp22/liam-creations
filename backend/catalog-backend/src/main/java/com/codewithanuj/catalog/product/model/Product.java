@@ -29,6 +29,8 @@ public class Product {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ProductCategory category;
+    @Column(nullable = false)
+    private boolean deleted = false;
     @CreationTimestamp
     @Column(updatable = false)
     private Instant createdAt;
@@ -69,6 +71,8 @@ public class Product {
     public boolean isFeatured() { return featured; }
     public String getImageUrl() { return imageUrl; }
     public ProductCategory getCategory() { return category; }
+    public boolean isDeleted() { return deleted; }
+    public void setDeleted(boolean deleted) { this.deleted = deleted; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
 }

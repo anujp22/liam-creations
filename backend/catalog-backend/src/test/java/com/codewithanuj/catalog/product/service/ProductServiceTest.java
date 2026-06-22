@@ -47,7 +47,7 @@ class ProductServiceTest {
     @Test
     void getAllProductsReturnsMappedDtoList() {
         Pageable pageable = PageRequest.of(0, 20);
-        when(productRepository.findAll(pageable)).thenReturn(new PageImpl<>(List.of(
+        when(productRepository.findByDeletedFalse(pageable)).thenReturn(new PageImpl<>(List.of(
                 product("PRD-001", ProductStatus.IN_STOCK),
                 product("PRD-002", ProductStatus.OUT_OF_STOCK)
         )));
@@ -62,7 +62,7 @@ class ProductServiceTest {
     @Test
     void getProductsByStatusDelegatesToRepositoryFindByStatus() {
         Pageable pageable = PageRequest.of(0, 20);
-        when(productRepository.findByStatus(ProductStatus.IN_STOCK, pageable))
+        when(productRepository.findByStatusAndDeletedFalse(ProductStatus.IN_STOCK, pageable))
                 .thenReturn(new PageImpl<>(List.of(product("PRD-001", ProductStatus.IN_STOCK))));
 
         Page<ProductResponseDto> result = productService.getProductsByStatus(ProductStatus.IN_STOCK, pageable);
@@ -108,7 +108,7 @@ class ProductServiceTest {
     @Test
     void getProductsNormalisesBlankSearchToNullAndFallsBackToFindAll() {
         Pageable pageable = PageRequest.of(0, 20);
-        when(productRepository.findAll(pageable))
+        when(productRepository.findByDeletedFalse(pageable))
                 .thenReturn(new PageImpl<>(List.of(product("PRD-001", ProductStatus.IN_STOCK))));
 
         Page<ProductResponseDto> result = productService.getProducts(null, null, "   ", pageable);
@@ -116,24 +116,61 @@ class ProductServiceTest {
         assertThat(result.getTotalElements()).isEqualTo(1);
     }
 
-    // ── Delete ────────────────────────────────────────────────────────────────
+    // ── Soft delete / restore / permanent delete ───────────────────────────────
 
     @Test
-    void deleteProductCallsDeleteByIdWhenProductExists() {
-        when(productRepository.existsById("PRD-001")).thenReturn(true);
+    void deleteProductSoftDeletesWhenProductExists() {
+        Product existing = product("PRD-001", ProductStatus.IN_STOCK);
+        when(productRepository.findById("PRD-001")).thenReturn(Optional.of(existing));
 
         productService.deleteProduct("PRD-001");
+
+        assertThat(existing.isDeleted()).isTrue();
+        verify(productRepository).save(existing);
+    }
+
+    @Test
+    void deleteProductThrows404WhenProductNotFound() {
+        when(productRepository.findById("PRD-999")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> productService.deleteProduct("PRD-999"))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("Product not found: PRD-999");
+    }
+
+    @Test
+    void restoreProductClearsDeletedFlag() {
+        Product existing = product("PRD-001", ProductStatus.IN_STOCK);
+        existing.setDeleted(true);
+        when(productRepository.findById("PRD-001")).thenReturn(Optional.of(existing));
+        when(productRepository.save(any())).thenReturn(existing);
+
+        productService.restoreProduct("PRD-001");
+
+        assertThat(existing.isDeleted()).isFalse();
+        verify(productRepository).save(existing);
+    }
+
+    @Test
+    void permanentlyDeleteProductCallsDeleteByIdWhenProductExists() {
+        when(productRepository.existsById("PRD-001")).thenReturn(true);
+
+        productService.permanentlyDeleteProduct("PRD-001");
 
         verify(productRepository).deleteById("PRD-001");
     }
 
     @Test
-    void deleteProductThrows404WhenProductNotFound() {
-        when(productRepository.existsById("PRD-999")).thenReturn(false);
+    void getDeletedProductsReturnsSoftDeletedRows() {
+        Pageable pageable = PageRequest.of(0, 20);
+        Product deleted = product("PRD-001", ProductStatus.IN_STOCK);
+        deleted.setDeleted(true);
+        when(productRepository.findByDeletedTrue(pageable))
+                .thenReturn(new PageImpl<>(List.of(deleted)));
 
-        assertThatThrownBy(() -> productService.deleteProduct("PRD-999"))
-                .isInstanceOf(ResponseStatusException.class)
-                .hasMessageContaining("Product not found: PRD-999");
+        Page<ProductResponseDto> result = productService.getDeletedProducts(pageable);
+
+        assertThat(result.getTotalElements()).isEqualTo(1);
     }
 
     // ── Write methods ─────────────────────────────────────────────────────────

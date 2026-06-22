@@ -11,17 +11,16 @@ import com.codewithanuj.catalog.product.service.ProductService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -31,6 +30,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -38,7 +38,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(AdminProductController.class)
-@Import(AdminProductControllerTest.TestConfig.class)
 @AutoConfigureMockMvc(addFilters = false)
 class AdminProductControllerTest {
 
@@ -50,14 +49,6 @@ class AdminProductControllerTest {
 
     @MockBean
     private ProductService productService;
-
-    @TestConfiguration
-    static class TestConfig {
-        @Bean
-        public ObjectMapper objectMapper() {
-            return new ObjectMapper();
-        }
-    }
 
     // ── DELETE ───────────────────────────────────────────────────────────────
 
@@ -77,6 +68,36 @@ class AdminProductControllerTest {
         mockMvc.perform(delete("/api/admin/products/PRD-999"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").value("Product not found: PRD-999"));
+    }
+
+    // ── Deleted list / restore / permanent ─────────────────────────────────────
+
+    @Test
+    void getDeletedProductsReturns200() throws Exception {
+        when(productService.getDeletedProducts(any()))
+                .thenReturn(new PageImpl<>(List.of(toDto("PRD-001", ProductStatus.IN_STOCK))));
+
+        mockMvc.perform(get("/api/admin/products/deleted"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].productNumber").value("PRD-001"));
+    }
+
+    @Test
+    void restoreProductReturns200() throws Exception {
+        when(productService.restoreProduct("PRD-001"))
+                .thenReturn(toDto("PRD-001", ProductStatus.IN_STOCK));
+
+        mockMvc.perform(post("/api/admin/products/PRD-001/restore"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.productNumber").value("PRD-001"));
+    }
+
+    @Test
+    void permanentlyDeleteProductReturns204() throws Exception {
+        doNothing().when(productService).permanentlyDeleteProduct("PRD-001");
+
+        mockMvc.perform(delete("/api/admin/products/PRD-001/permanent"))
+                .andExpect(status().isNoContent());
     }
 
     // ── POST ─────────────────────────────────────────────────────────────────
