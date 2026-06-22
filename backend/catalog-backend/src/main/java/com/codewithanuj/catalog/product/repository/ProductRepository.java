@@ -23,6 +23,14 @@ public interface ProductRepository extends JpaRepository<Product, String> {
     // On-sale products for the storefront Sale section.
     Page<Product> findBySalePriceIsNotNullAndDeletedFalse(Pageable pageable);
 
+    // Inventory metrics (active = not deleted).
+    long countByDeletedFalse();
+    long countByDeletedTrue();
+    long countByStatusAndDeletedFalse(ProductStatus status);
+    long countByCategoryAndDeletedFalse(ProductCategory category);
+    long countByFeaturedTrueAndDeletedFalse();
+    long countBySalePriceIsNotNullAndDeletedFalse();
+
     // search is guaranteed non-null when called — callers must never pass null here
     @Query("SELECT p FROM Product p WHERE p.deleted = false AND " +
            "(:status IS NULL OR p.status = :status) AND " +

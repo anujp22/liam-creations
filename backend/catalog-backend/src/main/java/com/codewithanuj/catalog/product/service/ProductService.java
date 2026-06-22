@@ -74,6 +74,25 @@ public class ProductService {
         return productRepository.findById(productNumber).map(this::toDto);
     }
 
+    public com.codewithanuj.catalog.product.dto.MetricsResponseDto getMetrics() {
+        java.util.Map<String, Long> byStatus = new java.util.LinkedHashMap<>();
+        for (ProductStatus status : ProductStatus.values()) {
+            byStatus.put(status.name(), productRepository.countByStatusAndDeletedFalse(status));
+        }
+        java.util.Map<String, Long> byCategory = new java.util.LinkedHashMap<>();
+        for (ProductCategory category : ProductCategory.values()) {
+            byCategory.put(category.name(), productRepository.countByCategoryAndDeletedFalse(category));
+        }
+        return new com.codewithanuj.catalog.product.dto.MetricsResponseDto(
+                productRepository.countByDeletedFalse(),
+                byStatus,
+                byCategory,
+                productRepository.countByFeaturedTrueAndDeletedFalse(),
+                productRepository.countBySalePriceIsNotNullAndDeletedFalse(),
+                productRepository.countByDeletedTrue()
+        );
+    }
+
     /** Soft delete — hides the product but keeps the row (and its reserved number). */
     @Transactional
     public void deleteProduct(String productNumber) {
