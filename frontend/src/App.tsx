@@ -8,6 +8,7 @@ import { RequireAdmin } from './components/RequireAdmin';
 import { AdminLayout } from './pages/admin/AdminLayout';
 import { AdminLoginPage } from './pages/admin/AdminLoginPage';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
+import { AdminProductFormPage } from './pages/admin/AdminProductFormPage';
 import { useCart } from './context/CartContext';
 
 function CartIcon() {
@@ -92,6 +93,8 @@ function App() {
       <Route element={<RequireAdmin />}>
         <Route element={<AdminLayout />}>
           <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/products/new" element={<AdminProductFormPage />} />
+          <Route path="/admin/products/:productNumber/edit" element={<AdminProductFormPage />} />
         </Route>
       </Route>
     </Routes>

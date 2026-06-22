@@ -1210,3 +1210,67 @@
   .admin-cell-product { grid-column: 1 / -1; }
   .admin-cell-actions { grid-column: 1 / -1; justify-content: flex-start; }
 }
+
+/* ── Product form ────────────────────────────────────────────────────── */
+
+.admin-back {
+  display: inline-block;
+  margin-bottom: 16px;
+  font-size: 14px;
+  color: var(--accent);
+  text-decoration: none;
+
+  &:hover { text-decoration: underline; }
+}
+
+.admin-form {
+  margin-top: 20px;
+  max-width: 620px;
+}
+
+.admin-form .admin-field { margin-bottom: 18px; }
+
+.admin-textarea {
+  resize: vertical;
+  font-family: var(--sans);
+  line-height: 1.5;
+}
+
+.admin-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 18px;
+}
+
+.admin-form-preview {
+  width: 160px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  margin-bottom: 18px;
+}
+
+.admin-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--text-h);
+  margin-bottom: 24px;
+  cursor: pointer;
+}
+
+.admin-checkbox input { width: 17px; height: 17px; accent-color: var(--accent); }
+
+.admin-form-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.admin-form-submit { width: auto; margin-top: 0; padding: 12px 28px; }
+
+@media (max-width: 560px) {
+  .admin-form-grid { grid-template-columns: 1fr; }
+}
