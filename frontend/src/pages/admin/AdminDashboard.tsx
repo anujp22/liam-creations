@@ -12,13 +12,7 @@ const STATUS_OPTIONS: { value: ProductStatus; label: string }[] = [
 
 const CATEGORY_LABELS: Record<string, string> = {
   BRIDAL_SAREES: 'Bridal Sarees',
-  BRIDAL_LEHENGAS: 'Bridal Lehengas',
-  HALDI_MEHENDI: 'Haldi & Mehendi',
-  JEWELLERY: 'Jewellery',
-  CLAY_POTTERY: 'Clay & Pottery',
-  PUJA_RITUALS: 'Puja & Rituals',
   WEDDING_DECOR: 'Wedding Decor',
-  SWEETS_GIFTS: 'Sweets & Gifts',
 };
 
 export function AdminDashboard() {
@@ -74,7 +68,7 @@ export function AdminDashboard() {
   };
 
   const handleDelete = async (product: Product) => {
-    if (!window.confirm(`Delete "${product.title}" (${product.productNumber})? This cannot be undone.`)) return;
+    if (!window.confirm(`Move "${product.title}" (${product.productNumber}) to Deleted? You can restore it later.`)) return;
     setBusy(product.productNumber);
     try {
       await deleteProduct(product.productNumber);
@@ -130,7 +124,16 @@ export function AdminDashboard() {
                 </span>
               </span>
               <span className="admin-cell-muted">{CATEGORY_LABELS[p.category] ?? p.category}</span>
-              <span>₹{Number(p.price).toLocaleString('en-IN')}</span>
+              <span>
+                {p.salePrice != null ? (
+                  <span className="admin-price-sale">
+                    <span className="admin-price-was">₹{Number(p.price).toLocaleString('en-IN')}</span>
+                    <span className="admin-price-now">₹{Number(p.salePrice).toLocaleString('en-IN')}</span>
+                  </span>
+                ) : (
+                  <>₹{Number(p.price).toLocaleString('en-IN')}</>
+                )}
+              </span>
               <span>
                 <select
                   className="admin-status-select"
