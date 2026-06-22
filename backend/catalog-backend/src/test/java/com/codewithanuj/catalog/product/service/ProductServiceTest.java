@@ -210,7 +210,7 @@ class ProductServiceTest {
     void updateProductThrows404WhenProductNotFound() {
         ProductUpdateRequest request = new ProductUpdateRequest(
                 "Ghost", "Missing",
-                new BigDecimal("999.00"), "INR", ProductStatus.IN_STOCK, false, null, ProductCategory.JEWELLERY, null
+                new BigDecimal("999.00"), "INR", ProductStatus.IN_STOCK, false, null, ProductCategory.WEDDING_DECOR, null
         );
 
         when(productRepository.existsById("PRD-999")).thenReturn(false);
@@ -267,7 +267,7 @@ class ProductServiceTest {
     private Product product(String productNumber, ProductStatus status) {
         return new Product(
                 productNumber, "Sample Product", "A product",
-                new BigDecimal("1999.00"), "INR", status, true, null, ProductCategory.JEWELLERY
+                new BigDecimal("1999.00"), "INR", status, true, null, ProductCategory.WEDDING_DECOR
         );
     }
 }

@@ -141,7 +141,7 @@ class AdminProductControllerTest {
     void updateProductReturns404WhenProductDoesNotExist() throws Exception {
         ProductUpdateRequest request = new ProductUpdateRequest(
                 "Ghost Product", "Does not exist",
-                new BigDecimal("999.00"), "INR", ProductStatus.IN_STOCK, false, null, ProductCategory.JEWELLERY, null
+                new BigDecimal("999.00"), "INR", ProductStatus.IN_STOCK, false, null, ProductCategory.WEDDING_DECOR, null
         );
 
         when(productService.updateProduct(eq("PRD-999"), any()))
@@ -220,7 +220,7 @@ class AdminProductControllerTest {
     private ProductResponseDto toDto(String productNumber, ProductStatus status) {
         return new ProductResponseDto(
                 productNumber, "Sample Product", "A product",
-                new BigDecimal("1999.00"), "INR", status, true, null, ProductCategory.JEWELLERY, null, null, null
+                new BigDecimal("1999.00"), "INR", status, true, null, ProductCategory.WEDDING_DECOR, null, null, null
         );
     }
 }

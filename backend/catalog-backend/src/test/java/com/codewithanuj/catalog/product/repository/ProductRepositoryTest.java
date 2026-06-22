@@ -54,7 +54,7 @@ class ProductRepositoryTest {
         ));
         productRepository.save(new Product(
                 "PRD-002", "Haldi Package", "Desc",
-                new BigDecimal("2499.00"), "INR", ProductStatus.OUT_OF_STOCK, false, null, ProductCategory.HALDI_MEHENDI
+                new BigDecimal("2499.00"), "INR", ProductStatus.OUT_OF_STOCK, false, null, ProductCategory.WEDDING_DECOR
         ));
 
         List<Product> products = productRepository.findAll();
@@ -79,7 +79,7 @@ class ProductRepositoryTest {
         ));
         productRepository.save(new Product(
                 "PRD-002", "Haldi Package", "Desc",
-                new BigDecimal("2499.00"), "INR", ProductStatus.OUT_OF_STOCK, false, null, ProductCategory.HALDI_MEHENDI
+                new BigDecimal("2499.00"), "INR", ProductStatus.OUT_OF_STOCK, false, null, ProductCategory.WEDDING_DECOR
         ));
 
         Page<Product> inStock = productRepository.findByStatusAndDeletedFalse(ProductStatus.IN_STOCK, PageRequest.of(0, 20));
@@ -96,7 +96,7 @@ class ProductRepositoryTest {
         ));
         productRepository.save(new Product(
                 "PRD-002", "Haldi Package", "Desc",
-                new BigDecimal("2499.00"), "INR", ProductStatus.IN_STOCK, false, null, ProductCategory.HALDI_MEHENDI
+                new BigDecimal("2499.00"), "INR", ProductStatus.IN_STOCK, false, null, ProductCategory.WEDDING_DECOR
         ));
 
         Page<Product> sarees = productRepository.findByCategoryAndDeletedFalse(ProductCategory.BRIDAL_SAREES, PageRequest.of(0, 20));
@@ -113,7 +113,7 @@ class ProductRepositoryTest {
         ));
         productRepository.save(new Product(
                 "PRD-002", "Haldi Package", "Turmeric paste set",
-                new BigDecimal("2499.00"), "INR", ProductStatus.IN_STOCK, false, null, ProductCategory.HALDI_MEHENDI
+                new BigDecimal("2499.00"), "INR", ProductStatus.IN_STOCK, false, null, ProductCategory.WEDDING_DECOR
         ));
 
         Page<Product> result = productRepository.findFiltered(null, null, "silk", PageRequest.of(0, 20));
@@ -126,11 +126,11 @@ class ProductRepositoryTest {
     void findFilteredWithSearchTermMatchesDescription() {
         productRepository.save(new Product(
                 "PRD-001", "Haldi Package", "Contains turmeric paste",
-                new BigDecimal("2499.00"), "INR", ProductStatus.IN_STOCK, false, null, ProductCategory.HALDI_MEHENDI
+                new BigDecimal("2499.00"), "INR", ProductStatus.IN_STOCK, false, null, ProductCategory.WEDDING_DECOR
         ));
         productRepository.save(new Product(
                 "PRD-002", "Silver Coin", "Gold dipped coin",
-                new BigDecimal("500.00"), "INR", ProductStatus.IN_STOCK, false, null, ProductCategory.SWEETS_GIFTS
+                new BigDecimal("500.00"), "INR", ProductStatus.IN_STOCK, false, null, ProductCategory.WEDDING_DECOR
         ));
 
         Page<Product> result = productRepository.findFiltered(null, null, "turmeric", PageRequest.of(0, 20));
@@ -147,7 +147,7 @@ class ProductRepositoryTest {
         ));
         productRepository.save(new Product(
                 "PRD-002", "Lehenga", "Desc",
-                new BigDecimal("2000.00"), "INR", ProductStatus.OUT_OF_STOCK, false, null, ProductCategory.BRIDAL_LEHENGAS
+                new BigDecimal("2000.00"), "INR", ProductStatus.OUT_OF_STOCK, false, null, ProductCategory.WEDDING_DECOR
         ));
 
         Page<Product> result = productRepository.findFiltered(ProductStatus.IN_STOCK, null, "saree", PageRequest.of(0, 20));
@@ -168,7 +168,7 @@ class ProductRepositoryTest {
         ));
         productRepository.save(new Product(
                 "PRD-003", "Haldi Package", "Desc",
-                new BigDecimal("2499.00"), "INR", ProductStatus.IN_STOCK, false, null, ProductCategory.HALDI_MEHENDI
+                new BigDecimal("2499.00"), "INR", ProductStatus.IN_STOCK, false, null, ProductCategory.WEDDING_DECOR
         ));
 
         Page<Product> result = productRepository.findByStatusAndCategoryAndDeletedFalse(
