@@ -186,24 +186,33 @@
 
 .product-card {
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 12px;
   overflow: hidden;
+  background: var(--bg);
   display: flex;
   flex-direction: column;
   text-align: left;
   box-shadow: var(--shadow);
-  transition: box-shadow 0.2s;
+  transition: transform 0.2s, box-shadow 0.2s;
 
   &:hover {
-    box-shadow: var(--shadow), 0 0 0 2px var(--accent-border);
+    transform: translateY(-4px);
+    box-shadow: var(--shadow), 0 0 0 1px var(--accent-border);
   }
 }
 
+.product-image {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  display: block;
+}
+
 .product-card-link {
-  padding: 20px;
+  padding: 18px 20px 20px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   text-decoration: none;
   color: inherit;
   flex: 1;
@@ -211,15 +220,16 @@
 
 .product-status {
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
   color: var(--accent);
 }
 
 .product-title {
   margin: 0;
-  font-size: 18px;
+  font-size: 22px;
+  line-height: 1.15;
 }
 
 .product-description {
@@ -258,24 +268,69 @@
   font-size: 13px;
   color: var(--text);
   margin-bottom: 16px;
+  letter-spacing: 0.02em;
 }
 
 .grid-message {
   text-align: center;
-  padding: 48px;
+  padding: 56px 48px;
   color: var(--text);
+  font-family: var(--heading);
+  font-size: 20px;
+  font-style: italic;
 }
 
 .grid-error {
-  color: #dc2626;
+  color: #b3261e;
+  font-style: normal;
+  font-family: var(--sans);
+  font-size: 15px;
 }
 
 .product-featured {
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: #f59e0b;
+  letter-spacing: 0.12em;
+  color: var(--gold);
+}
+
+/* ── Pagination ──────────────────────────────────────────────────────── */
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  margin-top: 36px;
+}
+
+.pagination-btn {
+  padding: 8px 18px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--bg);
+  color: var(--text-h);
+  font-family: var(--sans);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover:not(:disabled) {
+    border-color: var(--accent-border);
+    color: var(--accent);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.pagination-info {
+  font-size: 13px;
+  color: var(--text);
+  letter-spacing: 0.04em;
 }
 
 /* ── Detail page ─────────────────────────────────────────────────────── */
