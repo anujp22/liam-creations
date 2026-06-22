@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { fetchProduct } from '../../api/products';
 import type { ProductCategory, ProductStatus } from '../../api/products';
-import { createProduct, updateProduct, type ProductCreateInput } from '../../api/admin';
+import { createProduct, updateProduct } from '../../api/admin';
 
 const STATUS_OPTIONS: { value: ProductStatus; label: string }[] = [
   { value: 'IN_STOCK', label: 'In stock' },
@@ -12,13 +12,7 @@ const STATUS_OPTIONS: { value: ProductStatus; label: string }[] = [
 
 const CATEGORY_OPTIONS: { value: ProductCategory; label: string }[] = [
   { value: 'BRIDAL_SAREES', label: 'Bridal Sarees' },
-  { value: 'BRIDAL_LEHENGAS', label: 'Bridal Lehengas' },
-  { value: 'HALDI_MEHENDI', label: 'Haldi & Mehendi' },
-  { value: 'JEWELLERY', label: 'Jewellery' },
-  { value: 'CLAY_POTTERY', label: 'Clay & Pottery' },
-  { value: 'PUJA_RITUALS', label: 'Puja & Rituals' },
   { value: 'WEDDING_DECOR', label: 'Wedding Decor' },
-  { value: 'SWEETS_GIFTS', label: 'Sweets & Gifts' },
 ];
 
 interface FormState {
@@ -110,7 +104,7 @@ export function AdminProductFormPage() {
       if (isEdit) {
         await updateProduct(productNumber!, payload);
       } else {
-        await createProduct({ ...payload, productNumber: form.productNumber.trim() } as ProductCreateInput);
+        await createProduct(payload);
       }
       navigate('/admin', { replace: true });
     } catch (err) {

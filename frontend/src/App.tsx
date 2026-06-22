@@ -7,7 +7,10 @@ import { CartPage } from './pages/CartPage';
 import { RequireAdmin } from './components/RequireAdmin';
 import { AdminLayout } from './pages/admin/AdminLayout';
 import { AdminLoginPage } from './pages/admin/AdminLoginPage';
+import { AdminSummary } from './pages/admin/AdminSummary';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
+import { AdminInventory } from './pages/admin/AdminInventory';
+import { AdminDeleted } from './pages/admin/AdminDeleted';
 import { AdminProductFormPage } from './pages/admin/AdminProductFormPage';
 import { useCart } from './context/CartContext';
 
@@ -92,9 +95,12 @@ function App() {
       <Route path="/admin/login" element={<AdminLoginPage />} />
       <Route element={<RequireAdmin />}>
         <Route element={<AdminLayout />}>
-          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin" element={<AdminSummary />} />
+          <Route path="/admin/products" element={<AdminDashboard />} />
           <Route path="/admin/products/new" element={<AdminProductFormPage />} />
           <Route path="/admin/products/:productNumber/edit" element={<AdminProductFormPage />} />
+          <Route path="/admin/inventory" element={<AdminInventory />} />
+          <Route path="/admin/deleted" element={<AdminDeleted />} />
         </Route>
       </Route>
     </Routes>

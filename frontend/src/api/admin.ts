@@ -1,12 +1,13 @@
-import type { Product, ProductCategory, ProductStatus } from './products';
+import type { Product, ProductCategory, ProductPage, ProductStatus } from './products';
 
 const TOKEN_KEY = 'lc-admin-auth';
 
-/** Payload shared by create (with productNumber) and update (without). */
+/** Payload for create and update. productNumber is assigned by the server. */
 export interface ProductInput {
   title: string;
   description: string;
   price: number;
+  salePrice?: number | null;
   currency: string;
   status: ProductStatus;
   featured: boolean;
@@ -14,8 +15,18 @@ export interface ProductInput {
   category: ProductCategory;
 }
 
-export interface ProductCreateInput extends ProductInput {
-  productNumber: string;
+export interface Metrics {
+  totalActive: number;
+  byStatus: Record<string, number>;
+  byCategory: Record<string, number>;
+  featured: number;
+  onSale: number;
+  deleted: number;
+}
+
+interface PagedResponse {
+  content: Product[];
+  page: { totalElements: number; totalPages: number; number: number; size: number };
 }
 
 /** Thrown when the backend rejects credentials (401). */
@@ -87,7 +98,7 @@ export async function verifyCredentials(token: string): Promise<string> {
 
 // ── product CRUD ──────────────────────────────────────────────────────────────
 
-export function createProduct(input: ProductCreateInput): Promise<Product> {
+export function createProduct(input: ProductInput): Promise<Product> {
   return adminRequest<Product>('/api/admin/products', {
     method: 'POST',
     body: JSON.stringify(input),
@@ -101,8 +112,26 @@ export function updateProduct(productNumber: string, input: ProductInput): Promi
   });
 }
 
+/** Soft delete — moves the product to the Deleted tab. */
 export function deleteProduct(productNumber: string): Promise<void> {
   return adminRequest<void>(`/api/admin/products/${productNumber}`, { method: 'DELETE' });
+}
+
+export function restoreProduct(productNumber: string): Promise<Product> {
+  return adminRequest<Product>(`/api/admin/products/${productNumber}/restore`, { method: 'POST' });
+}
+
+export function hardDeleteProduct(productNumber: string): Promise<void> {
+  return adminRequest<void>(`/api/admin/products/${productNumber}/permanent`, { method: 'DELETE' });
+}
+
+export async function listDeletedProducts(page = 0): Promise<ProductPage> {
+  const data = await adminRequest<PagedResponse>(`/api/admin/products/deleted?page=${page}`);
+  return { products: data.content, totalPages: data.page.totalPages, currentPage: data.page.number };
+}
+
+export function fetchMetrics(): Promise<Metrics> {
+  return adminRequest<Metrics>('/api/admin/metrics');
 }
 
 export function patchFeatured(productNumber: string, featured: boolean): Promise<Product> {
