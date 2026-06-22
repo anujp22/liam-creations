@@ -756,8 +756,16 @@
   color: var(--accent);
 }
 
+.footer-social {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px 22px;
+}
+
 .footer-instagram {
-  margin-top: 12px;
   font-size: 13px;
   color: var(--accent);
   text-decoration: none;
@@ -767,6 +775,27 @@
     color: var(--accent-dark);
     text-decoration: underline;
   }
+}
+
+.footer-community {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  color: #1ba14e;
+  text-decoration: none;
+  letter-spacing: 0.04em;
+
+  &:hover {
+    color: #157f3d;
+    text-decoration: underline;
+  }
+}
+
+.footer-community-icon {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
 }
 
 .footer-copy {
