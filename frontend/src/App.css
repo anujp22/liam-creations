@@ -1029,6 +1029,47 @@
 .admin-recent-num { font-size: 12px; color: var(--text); }
 .admin-recent-price { font-weight: 600; }
 
+.admin-section { margin-top: 32px; }
+
+/* ── Inventory bars ──────────────────────────────────────────────────── */
+
+.admin-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.admin-bar-row {
+  display: grid;
+  grid-template-columns: 140px 1fr 36px;
+  align-items: center;
+  gap: 14px;
+}
+
+.admin-bar-label { font-size: 14px; color: var(--text-h); }
+
+.admin-bar-track {
+  height: 12px;
+  border-radius: 6px;
+  background: var(--blush-soft);
+  overflow: hidden;
+}
+
+.admin-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 6px;
+  background: var(--accent);
+  min-width: 2px;
+}
+
+.admin-bar-value { font-size: 14px; font-weight: 600; color: var(--text-h); text-align: right; }
+
+@media (max-width: 560px) {
+  .admin-bar-row { grid-template-columns: 100px 1fr 30px; gap: 10px; }
+}
+
 /* ── Login ───────────────────────────────────────────────────────────── */
 
 .admin-login {
