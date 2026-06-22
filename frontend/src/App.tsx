@@ -31,12 +31,12 @@ function App() {
         </Link>
         <nav className="catalog-nav">
           <a
-            href="https://www.instagram.com/"
+            href="https://www.instagram.com/_liamcreations"
             target="_blank"
             rel="noopener noreferrer"
             className="nav-instagram"
           >
-            Follow @liamscreations ↗
+            Follow @_liamcreations ↗
           </a>
           <CartIcon />
         </nav>
@@ -53,12 +53,12 @@ function App() {
         <p className="footer-name">Liams Creations</p>
         <p className="footer-tagline">Marriage Essentials</p>
         <a
-          href="https://www.instagram.com/"
+          href="https://www.instagram.com/_liamcreations"
           target="_blank"
           rel="noopener noreferrer"
           className="footer-instagram"
         >
-          Follow @liamscreations ↗
+          Follow @_liamcreations ↗
         </a>
         <p className="footer-copy">© {new Date().getFullYear()} Liams Creations. Crafted with love.</p>
       </footer>
