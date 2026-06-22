@@ -27,6 +27,13 @@ export function ProductGrid() {
     products: [],
     totalPages: 0,
   });
+  const [saleItems, setSaleItems] = useState<Product[]>([]);
+
+  useEffect(() => {
+    fetchProducts(undefined, undefined, 0, undefined, 'createdAt,desc', true)
+      .then(({ products: data }) => setSaleItems(data))
+      .catch(() => {});
+  }, []);
 
   const handleStatusChange = (s: ProductStatus | undefined) => { setStatus(s); setPage(0); };
   const handleCategoryChange = (c: ProductCategory | undefined) => { setCategory(c); setPage(0); };
@@ -56,6 +63,19 @@ export function ProductGrid() {
 
   return (
     <>
+      {saleItems.length > 0 && (
+        <section className="sale-section">
+          <div className="sale-section-head">
+            <h2 className="sale-section-title">On Sale</h2>
+            <span className="sale-section-sub">Limited-time prices</span>
+          </div>
+          <div className="product-grid">
+            {saleItems.map((p) => (
+              <ProductCard key={p.productNumber} product={p} />
+            ))}
+          </div>
+        </section>
+      )}
       <input
         type="search"
         className="search-input"

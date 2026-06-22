@@ -35,14 +35,22 @@ export function ProductDetailPage() {
         {product.imageUrl && (
           <img src={product.imageUrl} alt={product.title} className="detail-image" />
         )}
-        <span className="product-status">{product.status.replace(/_/g, ' ')}</span>
-        {product.featured && <span className="product-featured">Featured</span>}
+        <span className="product-badges">
+          <span className="product-status">{product.status.replace(/_/g, ' ')}</span>
+          {product.salePrice != null && <span className="product-sale-badge">Sale</span>}
+          {product.featured && <span className="product-featured">Featured</span>}
+        </span>
         <h2 className="detail-title">{product.title}</h2>
         <p className="detail-description">{product.description}</p>
         <div className="detail-footer">
-          <span className="product-price">
-            ₹{Number(product.price).toLocaleString('en-IN')}
-          </span>
+          {product.salePrice != null ? (
+            <span className="product-price">
+              <span className="product-price-was">₹{Number(product.price).toLocaleString('en-IN')}</span>
+              <span className="product-price-now">₹{Number(product.salePrice).toLocaleString('en-IN')}</span>
+            </span>
+          ) : (
+            <span className="product-price">₹{Number(product.price).toLocaleString('en-IN')}</span>
+          )}
           <button
             className={`add-to-cart-btn${inCart ? ' add-to-cart-btn--in-cart' : ''}`}
             onClick={() => addToCart(product)}
