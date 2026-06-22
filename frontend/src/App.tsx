@@ -1,5 +1,6 @@
 import { Routes, Route, Link } from 'react-router-dom';
 import './App.css';
+import logo from './assets/logo.png';
 import { ProductGrid } from './components/ProductGrid';
 import { ProductDetailPage } from './pages/ProductDetailPage';
 import { CartPage } from './pages/CartPage';
@@ -21,7 +22,13 @@ function App() {
   return (
     <div className="catalog">
       <header className="catalog-header">
-        <h1>Shaadi Catalog</h1>
+        <Link to="/" className="brand-lockup" aria-label="Liams Creations — Marriage Essentials, home">
+          <img src={logo} alt="" className="brand-logo" />
+          <span className="brand-text">
+            <span className="brand-name">Liams Creations</span>
+            <span className="brand-tagline">Marriage Essentials</span>
+          </span>
+        </Link>
         <nav className="catalog-nav">
           <a
             href="https://www.instagram.com/"
@@ -29,7 +36,7 @@ function App() {
             rel="noopener noreferrer"
             className="nav-instagram"
           >
-            Follow us on Instagram ↗
+            Follow @liamscreations ↗
           </a>
           <CartIcon />
         </nav>
