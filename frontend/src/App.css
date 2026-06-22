@@ -353,17 +353,27 @@
 
 .detail-card {
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 28px;
+  background: var(--bg);
   display: flex;
   flex-direction: column;
   gap: 14px;
   box-shadow: var(--shadow);
 }
 
+.detail-image {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 4px;
+}
+
 .detail-title {
   margin: 0;
-  font-size: 26px;
+  font-size: 36px;
+  line-height: 1.1;
 }
 
 .detail-description {
