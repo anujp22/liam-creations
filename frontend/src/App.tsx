@@ -1,9 +1,13 @@
-import { Routes, Route, Link } from 'react-router-dom';
+import { Routes, Route, Link, Outlet } from 'react-router-dom';
 import './App.css';
 import logo from './assets/logo.png';
 import { ProductGrid } from './components/ProductGrid';
 import { ProductDetailPage } from './pages/ProductDetailPage';
 import { CartPage } from './pages/CartPage';
+import { RequireAdmin } from './components/RequireAdmin';
+import { AdminLayout } from './pages/admin/AdminLayout';
+import { AdminLoginPage } from './pages/admin/AdminLoginPage';
+import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { useCart } from './context/CartContext';
 
 function CartIcon() {
@@ -18,7 +22,7 @@ function CartIcon() {
   );
 }
 
-function App() {
+function ShopLayout() {
   return (
     <div className="catalog">
       <header className="catalog-header">
@@ -42,11 +46,7 @@ function App() {
         </nav>
       </header>
       <main>
-        <Routes>
-          <Route path="/" element={<ProductGrid />} />
-          <Route path="/products/:productNumber" element={<ProductDetailPage />} />
-          <Route path="/cart" element={<CartPage />} />
-        </Routes>
+        <Outlet />
       </main>
       <footer className="catalog-footer">
         <img src={logo} alt="" className="footer-logo" />
@@ -76,6 +76,25 @@ function App() {
         <p className="footer-copy">© {new Date().getFullYear()} Liams Creations. Crafted with love.</p>
       </footer>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <Routes>
+      <Route element={<ShopLayout />}>
+        <Route path="/" element={<ProductGrid />} />
+        <Route path="/products/:productNumber" element={<ProductDetailPage />} />
+        <Route path="/cart" element={<CartPage />} />
+      </Route>
+
+      <Route path="/admin/login" element={<AdminLoginPage />} />
+      <Route element={<RequireAdmin />}>
+        <Route element={<AdminLayout />}>
+          <Route path="/admin" element={<AdminDashboard />} />
+        </Route>
+      </Route>
+    </Routes>
   );
 }
 
