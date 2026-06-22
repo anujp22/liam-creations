@@ -36,6 +36,9 @@ class ProductServiceTest {
     @Mock
     private ProductRepository productRepository;
 
+    @Mock
+    private ProductNumberGenerator productNumberGenerator;
+
     @InjectMocks
     private ProductService productService;
 
@@ -136,32 +139,18 @@ class ProductServiceTest {
     // ── Write methods ─────────────────────────────────────────────────────────
 
     @Test
-    void createProductSavesAndReturnsDto() {
+    void createProductAssignsGeneratedNumberSavesAndReturnsDto() {
         ProductCreateRequest request = new ProductCreateRequest(
-                "PRD-010", "Banarasi Silk Saree", "Hand-woven pure silk",
+                "Banarasi Silk Saree", "Hand-woven pure silk",
                 new BigDecimal("8500.00"), "INR", ProductStatus.IN_STOCK, true, null, ProductCategory.BRIDAL_SAREES
         );
 
-        when(productRepository.existsById("PRD-010")).thenReturn(false);
+        when(productNumberGenerator.next()).thenReturn("PRD-010");
         when(productRepository.save(any())).thenReturn(product("PRD-010", ProductStatus.IN_STOCK));
 
         ProductResponseDto result = productService.createProduct(request);
 
         assertThat(result.productNumber()).isEqualTo("PRD-010");
-    }
-
-    @Test
-    void createProductThrows409WhenProductAlreadyExists() {
-        ProductCreateRequest request = new ProductCreateRequest(
-                "PRD-001", "Duplicate", "Already exists",
-                new BigDecimal("999.00"), "INR", ProductStatus.IN_STOCK, false, null, ProductCategory.JEWELLERY
-        );
-
-        when(productRepository.existsById("PRD-001")).thenReturn(true);
-
-        assertThatThrownBy(() -> productService.createProduct(request))
-                .isInstanceOf(ResponseStatusException.class)
-                .hasMessageContaining("Product already exists: PRD-001");
     }
 
     @Test

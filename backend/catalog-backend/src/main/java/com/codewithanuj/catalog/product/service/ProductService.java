@@ -23,9 +23,11 @@ import java.util.Optional;
 public class ProductService {
 
     private final ProductRepository productRepository;
+    private final ProductNumberGenerator productNumberGenerator;
 
-    public ProductService(ProductRepository productRepository) {
+    public ProductService(ProductRepository productRepository, ProductNumberGenerator productNumberGenerator) {
         this.productRepository = productRepository;
+        this.productNumberGenerator = productNumberGenerator;
     }
 
     public Page<ProductResponseDto> getAllProducts(Pageable pageable) {
@@ -76,13 +78,8 @@ public class ProductService {
 
     @Transactional
     public ProductResponseDto createProduct(ProductCreateRequest request) {
-        if (productRepository.existsById(request.productNumber())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT,
-                    "Product already exists: " + request.productNumber());
-        }
-
         Product product = new Product(
-                request.productNumber(),
+                productNumberGenerator.next(),
                 request.title(),
                 request.description(),
                 request.price(),

@@ -84,7 +84,7 @@ class AdminProductControllerTest {
     @Test
     void createProductReturns201WhenRequestIsValid() throws Exception {
         ProductCreateRequest request = new ProductCreateRequest(
-                "PRD-010", "Banarasi Silk Saree", "Hand-woven pure silk",
+                "Banarasi Silk Saree", "Hand-woven pure silk",
                 new BigDecimal("8500.00"), "INR", ProductStatus.IN_STOCK, true, null, ProductCategory.BRIDAL_SAREES
         );
 
@@ -95,24 +95,6 @@ class AdminProductControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.productNumber").value("PRD-010"));
-    }
-
-    @Test
-    void createProductReturns409WhenProductNumberAlreadyExists() throws Exception {
-        ProductCreateRequest request = new ProductCreateRequest(
-                "PRD-001", "Duplicate", "Already exists",
-                new BigDecimal("999.00"), "INR", ProductStatus.IN_STOCK, false, null, ProductCategory.JEWELLERY
-        );
-
-        when(productService.createProduct(any()))
-                .thenThrow(new ResponseStatusException(CONFLICT, "Product already exists: PRD-001"));
-
-        mockMvc.perform(post("/api/admin/products")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.status").value(409))
-                .andExpect(jsonPath("$.message").value("Product already exists: PRD-001"));
     }
 
     // ── PUT ──────────────────────────────────────────────────────────────────
