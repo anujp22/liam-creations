@@ -1348,6 +1348,18 @@
 
 .admin-form .admin-field { margin-bottom: 18px; }
 
+.admin-form-note {
+  font-size: 13px;
+  color: var(--text);
+  margin-bottom: 18px;
+}
+
+.admin-field-hint {
+  font-weight: 400;
+  color: var(--text);
+  font-size: 12px;
+}
+
 .admin-textarea {
   resize: vertical;
   font-family: var(--sans);

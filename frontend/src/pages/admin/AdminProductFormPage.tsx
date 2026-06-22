@@ -16,10 +16,10 @@ const CATEGORY_OPTIONS: { value: ProductCategory; label: string }[] = [
 ];
 
 interface FormState {
-  productNumber: string;
   title: string;
   description: string;
   price: string;
+  salePrice: string;
   currency: string;
   status: ProductStatus;
   category: ProductCategory;
@@ -28,10 +28,10 @@ interface FormState {
 }
 
 const EMPTY: FormState = {
-  productNumber: '',
   title: '',
   description: '',
   price: '',
+  salePrice: '',
   currency: 'INR',
   status: 'IN_STOCK',
   category: 'BRIDAL_SAREES',
@@ -54,10 +54,10 @@ export function AdminProductFormPage() {
     fetchProduct(productNumber)
       .then((p) =>
         setForm({
-          productNumber: p.productNumber,
           title: p.title,
           description: p.description,
           price: String(p.price),
+          salePrice: p.salePrice != null ? String(p.salePrice) : '',
           currency: p.currency,
           status: p.status,
           category: p.category,
@@ -73,13 +73,16 @@ export function AdminProductFormPage() {
     setForm((prev) => ({ ...prev, [key]: value }));
 
   const validate = (): string | null => {
-    if (!isEdit && !/^PRD-\d{3,6}$/.test(form.productNumber.trim()))
-      return 'Product number must match PRD-001 to PRD-999999.';
     if (!form.title.trim()) return 'Title is required.';
     if (!form.description.trim()) return 'Description is required.';
     const price = Number(form.price);
     if (!Number.isFinite(price) || price <= 0) return 'Price must be greater than 0.';
     if (!form.currency.trim()) return 'Currency is required.';
+    if (form.salePrice.trim()) {
+      const sale = Number(form.salePrice);
+      if (!Number.isFinite(sale) || sale <= 0) return 'Sale price must be greater than 0.';
+      if (sale >= price) return 'Sale price must be below the regular price.';
+    }
     return null;
   };
 
@@ -94,6 +97,7 @@ export function AdminProductFormPage() {
       title: form.title.trim(),
       description: form.description.trim(),
       price: Number(form.price),
+      salePrice: form.salePrice.trim() ? Number(form.salePrice) : null,
       currency: form.currency.trim(),
       status: form.status,
       category: form.category,
@@ -124,17 +128,10 @@ export function AdminProductFormPage() {
       {error && <p className="admin-error">{error}</p>}
 
       <form className="admin-form" onSubmit={handleSubmit}>
-        {!isEdit && (
-          <label className="admin-field">
-            <span className="admin-field-label">Product number</span>
-            <input
-              className="admin-input"
-              value={form.productNumber}
-              onChange={(e) => set('productNumber', e.target.value)}
-              placeholder="PRD-101"
-              required
-            />
-          </label>
+        {isEdit ? (
+          <p className="admin-form-note">Product number <strong>{productNumber}</strong></p>
+        ) : (
+          <p className="admin-form-note">A product number is assigned automatically when you save.</p>
         )}
 
         <label className="admin-field">
@@ -164,6 +161,19 @@ export function AdminProductFormPage() {
               value={form.price}
               onChange={(e) => set('price', e.target.value)}
               required
+            />
+          </label>
+
+          <label className="admin-field">
+            <span className="admin-field-label">Sale price <span className="admin-field-hint">(optional, below price)</span></span>
+            <input
+              className="admin-input"
+              type="number"
+              min="0.01"
+              step="0.01"
+              value={form.salePrice}
+              onChange={(e) => set('salePrice', e.target.value)}
+              placeholder="—"
             />
           </label>
 
