@@ -48,6 +48,20 @@ function App() {
           <Route path="/cart" element={<CartPage />} />
         </Routes>
       </main>
+      <footer className="catalog-footer">
+        <img src={logo} alt="" className="footer-logo" />
+        <p className="footer-name">Liams Creations</p>
+        <p className="footer-tagline">Marriage Essentials</p>
+        <a
+          href="https://www.instagram.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="footer-instagram"
+        >
+          Follow @liamscreations ↗
+        </a>
+        <p className="footer-copy">© {new Date().getFullYear()} Liams Creations. Crafted with love.</p>
+      </footer>
     </div>
   );
 }
