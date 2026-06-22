@@ -1273,6 +1273,10 @@
 
 .admin-row--busy { opacity: 0.5; pointer-events: none; }
 
+.admin-row--deleted {
+  grid-template-columns: 1fr auto;
+}
+
 .admin-cell-product {
   display: flex;
   align-items: center;
