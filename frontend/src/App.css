@@ -183,7 +183,7 @@
 }
 
 .filter-btn--active {
-  background: var(--accent);
+  background: var(--accent-dark);
   border-color: var(--accent);
   color: #fff;
   font-weight: 500;
@@ -246,13 +246,18 @@
   color: var(--accent);
 }
 
+/* Industry-standard inventory status cues */
+.product-status--IN_STOCK { color: var(--success); }
+.product-status--OUT_OF_STOCK { color: var(--danger); }
+.product-status--BUILT_ON_REQUEST { color: var(--warning); }
+
 .product-sale-badge {
   font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: #fff;
-  background: var(--accent);
+  background: var(--accent-dark);
   padding: 2px 8px;
   border-radius: 10px;
 }
@@ -354,7 +359,7 @@
 }
 
 .grid-error {
-  color: #b3261e;
+  color: var(--danger);
   font-style: normal;
   font-family: var(--sans);
   font-size: 15px;
@@ -474,7 +479,7 @@
   width: 100%;
   padding: 10px 16px;
   border: none;
-  background: var(--accent);
+  background: var(--accent-dark);
   color: #fff;
   font-size: 14px;
   font-weight: 600;
@@ -521,7 +526,7 @@
   position: absolute;
   top: -6px;
   right: -8px;
-  background: var(--accent);
+  background: var(--accent-dark);
   color: #fff;
   font-size: 10px;
   font-weight: 700;
@@ -595,8 +600,8 @@
   cursor: pointer;
 
   &:hover {
-    border-color: #dc2626;
-    color: #dc2626;
+    border-color: var(--danger);
+    color: var(--danger);
   }
 }
 
@@ -718,7 +723,7 @@
   border-radius: 4px;
 
   &:hover {
-    color: #dc2626;
+    color: var(--danger);
     background: rgba(220, 38, 38, 0.08);
   }
 }
@@ -1162,7 +1167,7 @@
   display: block;
   height: 100%;
   border-radius: 6px;
-  background: var(--accent);
+  background: var(--accent-dark);
   min-width: 2px;
 }
 
@@ -1270,7 +1275,7 @@
   box-sizing: border-box;
   background: rgba(179, 38, 30, 0.08);
   border: 1px solid rgba(179, 38, 30, 0.3);
-  color: #b3261e;
+  color: var(--danger);
   font-size: 13px;
   border-radius: 8px;
   padding: 10px 12px;
@@ -1316,7 +1321,7 @@
   padding: 12px 16px;
   border: none;
   border-radius: 8px;
-  background: var(--accent);
+  background: var(--accent-dark);
   color: #fff;
   font-family: var(--sans);
   font-size: 15px;
@@ -1348,7 +1353,7 @@
 .admin-primary-btn {
   padding: 10px 18px;
   border-radius: 22px;
-  background: var(--accent);
+  background: var(--accent-dark);
   color: #fff;
   font-size: 14px;
   font-weight: 600;
@@ -1380,7 +1385,7 @@
 .admin-error {
   background: rgba(179, 38, 30, 0.08);
   border: 1px solid rgba(179, 38, 30, 0.3);
-  color: #b3261e;
+  color: var(--danger);
   font-size: 14px;
   border-radius: 8px;
   padding: 12px 14px;
@@ -1505,8 +1510,8 @@
 }
 
 .admin-link-btn--danger:hover {
-  border-color: #b3261e;
-  color: #b3261e;
+  border-color: var(--danger);
+  color: var(--danger);
 }
 
 @media (max-width: 760px) {

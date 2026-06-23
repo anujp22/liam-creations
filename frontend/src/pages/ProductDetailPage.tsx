@@ -36,7 +36,7 @@ export function ProductDetailPage() {
           <img src={product.imageUrl} alt={product.title} className="detail-image" />
         )}
         <span className="product-badges">
-          <span className="product-status">{product.status.replace(/_/g, ' ')}</span>
+          <span className={`product-status product-status--${product.status}`}>{product.status.replace(/_/g, ' ')}</span>
           {product.salePrice != null && <span className="product-sale-badge">Sale</span>}
           {product.featured && <span className="product-featured">Featured</span>}
         </span>

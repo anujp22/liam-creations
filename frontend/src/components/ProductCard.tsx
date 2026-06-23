@@ -17,7 +17,7 @@ export function ProductCard({ product }: Props) {
           <img src={product.imageUrl} alt={product.title} className="product-image" />
         )}
         <span className="product-badges">
-          <span className="product-status">{product.status.replace(/_/g, ' ')}</span>
+          <span className={`product-status product-status--${product.status}`}>{product.status.replace(/_/g, ' ')}</span>
           {product.salePrice != null && <span className="product-sale-badge">Sale</span>}
         </span>
         <h2 className="product-title">{product.title}</h2>
