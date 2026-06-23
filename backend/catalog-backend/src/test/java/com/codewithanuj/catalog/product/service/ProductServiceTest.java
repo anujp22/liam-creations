@@ -73,7 +73,7 @@ class ProductServiceTest {
 
     @Test
     void getProductByProductNumberReturnsDtoWhenFound() {
-        when(productRepository.findById("PRD-001"))
+        when(productRepository.findByProductNumberAndDeletedFalse("PRD-001"))
                 .thenReturn(Optional.of(product("PRD-001", ProductStatus.IN_STOCK)));
 
         Optional<ProductResponseDto> result = productService.getProductByProductNumber("PRD-001");
@@ -84,7 +84,7 @@ class ProductServiceTest {
 
     @Test
     void getProductByProductNumberReturnsEmptyWhenNotFound() {
-        when(productRepository.findById("PRD-999")).thenReturn(Optional.empty());
+        when(productRepository.findByProductNumberAndDeletedFalse("PRD-999")).thenReturn(Optional.empty());
 
         Optional<ProductResponseDto> result = productService.getProductByProductNumber("PRD-999");
 

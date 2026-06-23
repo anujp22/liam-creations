@@ -9,6 +9,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Optional;
+
 public interface ProductRepository extends JpaRepository<Product, String> {
 
     // Active (non-deleted) listings used by the storefront and admin product list.
@@ -19,6 +21,9 @@ public interface ProductRepository extends JpaRepository<Product, String> {
 
     // Soft-deleted products, for the admin Deleted tab.
     Page<Product> findByDeletedTrue(Pageable pageable);
+
+    // Single active product for the public storefront (soft-deleted ones must 404).
+    Optional<Product> findByProductNumberAndDeletedFalse(String productNumber);
 
     // On-sale products for the storefront Sale section.
     Page<Product> findBySalePriceIsNotNullAndDeletedFalse(Pageable pageable);

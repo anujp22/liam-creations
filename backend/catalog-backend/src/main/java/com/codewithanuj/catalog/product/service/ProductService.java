@@ -71,7 +71,7 @@ public class ProductService {
     }
 
     public Optional<ProductResponseDto> getProductByProductNumber(String productNumber) {
-        return productRepository.findById(productNumber).map(this::toDto);
+        return productRepository.findByProductNumberAndDeletedFalse(productNumber).map(this::toDto);
     }
 
     public com.codewithanuj.catalog.product.dto.MetricsResponseDto getMetrics() {
