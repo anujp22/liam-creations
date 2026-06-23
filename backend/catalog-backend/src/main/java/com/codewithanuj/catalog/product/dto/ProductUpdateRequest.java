@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 public record ProductUpdateRequest(
         @NotBlank
@@ -24,6 +25,7 @@ public record ProductUpdateRequest(
         String imageUrl,
         @NotNull
         ProductCategory category,
-        BigDecimal salePrice
+        BigDecimal salePrice,
+        List<String> images
 ) {
 }

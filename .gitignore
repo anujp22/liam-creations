@@ -19,3 +19,5 @@ dist/
 
 # Logs
 *.log
+# Local dev image uploads
+backend/catalog-backend/uploads/

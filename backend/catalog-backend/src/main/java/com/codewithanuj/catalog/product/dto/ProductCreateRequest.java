@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 // productNumber is assigned automatically by the server (see ProductNumberGenerator).
 public record ProductCreateRequest(
@@ -25,6 +26,7 @@ public record ProductCreateRequest(
         String imageUrl,
         @NotNull
         ProductCategory category,
-        BigDecimal salePrice
+        BigDecimal salePrice,
+        List<String> images
 ) {
 }

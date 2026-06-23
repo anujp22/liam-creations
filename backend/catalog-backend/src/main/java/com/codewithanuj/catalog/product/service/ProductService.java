@@ -139,6 +139,7 @@ public class ProductService {
                 request.category()
         );
         product.setSalePrice(request.salePrice());
+        applyImages(product, request.images());
 
         return toDto(productRepository.save(product));
     }
@@ -163,6 +164,7 @@ public class ProductService {
                 request.category()
         );
         updated.setSalePrice(request.salePrice());
+        applyImages(updated, request.images());
 
         return toDto(productRepository.save(updated));
     }
@@ -186,6 +188,7 @@ public class ProductService {
         );
         updated.setSalePrice(existing.getSalePrice());
         updated.setDeleted(existing.isDeleted());
+        updated.setImages(existing.getImages());
 
         return toDto(productRepository.save(updated));
     }
@@ -209,6 +212,7 @@ public class ProductService {
         );
         updated.setSalePrice(existing.getSalePrice());
         updated.setDeleted(existing.isDeleted());
+        updated.setImages(existing.getImages());
 
         return toDto(productRepository.save(updated));
     }
@@ -226,8 +230,18 @@ public class ProductService {
                 product.getCategory(),
                 product.getCreatedAt(),
                 product.getUpdatedAt(),
-                product.getSalePrice()
+                product.getSalePrice(),
+                product.getImages()
         );
+    }
+
+    /** Stores the gallery and keeps the primary imageUrl in sync with the first image. */
+    private void applyImages(Product product, java.util.List<String> images) {
+        java.util.List<String> list = (images == null) ? new java.util.ArrayList<>() : new java.util.ArrayList<>(images);
+        product.setImages(list);
+        if (!list.isEmpty()) {
+            product.setImageUrl(list.get(0));
+        }
     }
 
     private void validateSalePrice(java.math.BigDecimal price, java.math.BigDecimal salePrice) {

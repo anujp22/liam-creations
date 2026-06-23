@@ -5,6 +5,7 @@ import com.codewithanuj.catalog.product.model.ProductStatus;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 
 public record ProductResponseDto(
         String productNumber,
@@ -18,6 +19,7 @@ public record ProductResponseDto(
         ProductCategory category,
         Instant createdAt,
         Instant updatedAt,
-        BigDecimal salePrice
+        BigDecimal salePrice,
+        List<String> images
 ) {
 }

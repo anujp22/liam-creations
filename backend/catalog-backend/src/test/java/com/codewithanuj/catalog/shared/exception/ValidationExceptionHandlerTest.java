@@ -34,6 +34,10 @@ class ValidationExceptionHandlerTest {
     @MockBean
     private ProductService productService;
 
+    // AdminUploadController is also picked up by the broad @WebMvcTest scan
+    @MockBean
+    private com.codewithanuj.catalog.shared.storage.StorageService storageService;
+
     // Registers TestController as a bean so Spring MVC can discover its @PostMapping
     @TestConfiguration
     static class TestConfig {

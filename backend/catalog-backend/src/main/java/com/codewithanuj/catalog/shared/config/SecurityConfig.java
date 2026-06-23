@@ -61,7 +61,9 @@ public class SecurityConfig {
             @Override
             protected boolean shouldNotFilter(jakarta.servlet.http.HttpServletRequest request) {
                 String path = request.getRequestURI();
-                return ("GET".equals(request.getMethod()) && path.startsWith("/api/products"))
+                boolean isGet = "GET".equals(request.getMethod());
+                return (isGet && path.startsWith("/api/products"))
+                        || (isGet && path.startsWith("/uploads/"))
                         || path.equals("/actuator/health");
             }
         };
@@ -73,6 +75,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/products", "/api/products/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().denyAll()
                 )

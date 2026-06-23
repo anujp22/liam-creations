@@ -106,7 +106,7 @@ class AdminProductControllerTest {
     void createProductReturns201WhenRequestIsValid() throws Exception {
         ProductCreateRequest request = new ProductCreateRequest(
                 "Banarasi Silk Saree", "Hand-woven pure silk",
-                new BigDecimal("8500.00"), "INR", ProductStatus.IN_STOCK, true, null, ProductCategory.BRIDAL_SAREES, null
+                new BigDecimal("8500.00"), "INR", ProductStatus.IN_STOCK, true, null, ProductCategory.BRIDAL_SAREES, null, null
         );
 
         when(productService.createProduct(any())).thenReturn(toDto("PRD-010", ProductStatus.IN_STOCK));
@@ -124,7 +124,7 @@ class AdminProductControllerTest {
     void updateProductReturns200WhenProductExists() throws Exception {
         ProductUpdateRequest request = new ProductUpdateRequest(
                 "Updated Saree", "Updated desc",
-                new BigDecimal("9500.00"), "INR", ProductStatus.OUT_OF_STOCK, false, null, ProductCategory.BRIDAL_SAREES, null
+                new BigDecimal("9500.00"), "INR", ProductStatus.OUT_OF_STOCK, false, null, ProductCategory.BRIDAL_SAREES, null, null
         );
 
         when(productService.updateProduct(eq("PRD-001"), any()))
@@ -141,7 +141,7 @@ class AdminProductControllerTest {
     void updateProductReturns404WhenProductDoesNotExist() throws Exception {
         ProductUpdateRequest request = new ProductUpdateRequest(
                 "Ghost Product", "Does not exist",
-                new BigDecimal("999.00"), "INR", ProductStatus.IN_STOCK, false, null, ProductCategory.WEDDING_DECOR, null
+                new BigDecimal("999.00"), "INR", ProductStatus.IN_STOCK, false, null, ProductCategory.WEDDING_DECOR, null, null
         );
 
         when(productService.updateProduct(eq("PRD-999"), any()))
@@ -220,7 +220,7 @@ class AdminProductControllerTest {
     private ProductResponseDto toDto(String productNumber, ProductStatus status) {
         return new ProductResponseDto(
                 productNumber, "Sample Product", "A product",
-                new BigDecimal("1999.00"), "INR", status, true, null, ProductCategory.WEDDING_DECOR, null, null, null
+                new BigDecimal("1999.00"), "INR", status, true, null, ProductCategory.WEDDING_DECOR, null, null, null, null
         );
     }
 }
