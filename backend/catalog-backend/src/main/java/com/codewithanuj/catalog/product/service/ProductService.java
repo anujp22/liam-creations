@@ -24,28 +24,17 @@ public class ProductService {
 
     private final ProductRepository productRepository;
     private final ProductNumberGenerator productNumberGenerator;
+    private final com.codewithanuj.catalog.shared.storage.StorageService storageService;
 
-    public ProductService(ProductRepository productRepository, ProductNumberGenerator productNumberGenerator) {
+    public ProductService(ProductRepository productRepository,
+                          ProductNumberGenerator productNumberGenerator,
+                          com.codewithanuj.catalog.shared.storage.StorageService storageService) {
         this.productRepository = productRepository;
         this.productNumberGenerator = productNumberGenerator;
+        this.storageService = storageService;
     }
 
-    public Page<ProductResponseDto> getAllProducts(Pageable pageable) {
-        return productRepository.findByDeletedFalse(pageable).map(this::toDto);
-    }
-
-    public Page<ProductResponseDto> getProductsByStatus(ProductStatus status, Pageable pageable) {
-        return productRepository.findByStatusAndDeletedFalse(status, pageable).map(this::toDto);
-    }
-
-    public Page<ProductResponseDto> getProductsByCategory(ProductCategory category, Pageable pageable) {
-        return productRepository.findByCategoryAndDeletedFalse(category, pageable).map(this::toDto);
-    }
-
-    public Page<ProductResponseDto> getProductsByStatusAndCategory(ProductStatus status, ProductCategory category, Pageable pageable) {
-        return productRepository.findByStatusAndCategoryAndDeletedFalse(status, category, pageable).map(this::toDto);
-    }
-
+    @Transactional(readOnly = true)
     public Page<ProductResponseDto> getProducts(ProductStatus status, ProductCategory category, String search, boolean onSale, Pageable pageable) {
         if (onSale) {
             return productRepository.findBySalePriceIsNotNullAndDeletedFalse(pageable).map(this::toDto);
@@ -66,12 +55,14 @@ public class ProductService {
         return productRepository.findByDeletedFalse(pageable).map(this::toDto);
     }
 
+    @Transactional(readOnly = true)
     public Page<ProductResponseDto> getDeletedProducts(Pageable pageable) {
         return productRepository.findByDeletedTrue(pageable).map(this::toDto);
     }
 
+    @Transactional(readOnly = true)
     public Optional<ProductResponseDto> getProductByProductNumber(String productNumber) {
-        return productRepository.findById(productNumber).map(this::toDto);
+        return productRepository.findByProductNumberAndDeletedFalse(productNumber).map(this::toDto);
     }
 
     public com.codewithanuj.catalog.product.dto.MetricsResponseDto getMetrics() {
@@ -116,11 +107,20 @@ public class ProductService {
     /** Permanently removes the row. The product number stays reserved by the sequence. */
     @Transactional
     public void permanentlyDeleteProduct(String productNumber) {
-        if (!productRepository.existsById(productNumber)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                    "Product not found: " + productNumber);
+        Product product = productRepository.findById(productNumber)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Product not found: " + productNumber));
+
+        // Gather every stored image (gallery + primary thumbnail) before the row goes.
+        java.util.Set<String> urls = new java.util.LinkedHashSet<>(product.getImages());
+        if (product.getImageUrl() != null) {
+            urls.add(product.getImageUrl());
         }
-        productRepository.deleteById(productNumber);
+
+        productRepository.delete(product);
+
+        // Best-effort file cleanup; failures here must not fail the delete.
+        urls.forEach(storageService::delete);
     }
 
     @Transactional
@@ -146,75 +146,41 @@ public class ProductService {
 
     @Transactional
     public ProductResponseDto updateProduct(String productNumber, ProductUpdateRequest request) {
-        if (!productRepository.existsById(productNumber)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                    "Product not found: " + productNumber);
-        }
+        Product product = productRepository.findById(productNumber)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Product not found: " + productNumber));
         validateSalePrice(request.price(), request.salePrice());
 
-        Product updated = new Product(
-                productNumber,
-                request.title(),
-                request.description(),
-                request.price(),
-                request.currency(),
-                request.status(),
-                request.featured(),
-                request.imageUrl(),
-                request.category()
-        );
-        updated.setSalePrice(request.salePrice());
-        applyImages(updated, request.images());
+        product.setTitle(request.title());
+        product.setDescription(request.description());
+        product.setPrice(request.price());
+        product.setCurrency(request.currency());
+        product.setStatus(request.status());
+        product.setFeatured(request.featured());
+        product.setImageUrl(request.imageUrl());
+        product.setCategory(request.category());
+        product.setSalePrice(request.salePrice());
+        applyImages(product, request.images());
 
-        return toDto(productRepository.save(updated));
+        return toDto(productRepository.save(product));
     }
 
     @Transactional
     public ProductResponseDto updateFeatured(String productNumber, UpdateFeaturedRequest request) {
-        Product existing = productRepository.findById(productNumber)
+        Product product = productRepository.findById(productNumber)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "Product not found: " + productNumber));
-
-        Product updated = new Product(
-                existing.getProductNumber(),
-                existing.getTitle(),
-                existing.getDescription(),
-                existing.getPrice(),
-                existing.getCurrency(),
-                existing.getStatus(),
-                request.featured(),
-                existing.getImageUrl(),
-                existing.getCategory()
-        );
-        updated.setSalePrice(existing.getSalePrice());
-        updated.setDeleted(existing.isDeleted());
-        updated.setImages(existing.getImages());
-
-        return toDto(productRepository.save(updated));
+        product.setFeatured(request.featured());
+        return toDto(productRepository.save(product));
     }
 
     @Transactional
     public ProductResponseDto updateStatus(String productNumber, UpdateStatusRequest request) {
-        Product existing = productRepository.findById(productNumber)
+        Product product = productRepository.findById(productNumber)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "Product not found: " + productNumber));
-
-        Product updated = new Product(
-                existing.getProductNumber(),
-                existing.getTitle(),
-                existing.getDescription(),
-                existing.getPrice(),
-                existing.getCurrency(),
-                request.status(),
-                existing.isFeatured(),
-                existing.getImageUrl(),
-                existing.getCategory()
-        );
-        updated.setSalePrice(existing.getSalePrice());
-        updated.setDeleted(existing.isDeleted());
-        updated.setImages(existing.getImages());
-
-        return toDto(productRepository.save(updated));
+        product.setStatus(request.status());
+        return toDto(productRepository.save(product));
     }
 
     private ProductResponseDto toDto(Product product) {
@@ -231,7 +197,10 @@ public class ProductService {
                 product.getCreatedAt(),
                 product.getUpdatedAt(),
                 product.getSalePrice(),
-                product.getImages()
+                // Copy into a detached list: forces the lazy collection to load
+                // while the session is open, so JSON serialization can't trip a
+                // LazyInitializationException (open-in-view is disabled).
+                new java.util.ArrayList<>(product.getImages())
         );
     }
 

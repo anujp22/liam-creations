@@ -51,6 +51,9 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// Hook colocated with its provider by design; the fast-refresh rule only cares
+// about mixed exports, which is harmless here.
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAdminAuth() {
   const ctx = useContext(AdminAuthContext);
   if (!ctx) throw new Error('useAdminAuth must be used within AdminAuthProvider');

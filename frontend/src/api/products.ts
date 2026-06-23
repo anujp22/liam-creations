@@ -37,6 +37,7 @@ export interface ProductPage {
   products: Product[];
   totalPages: number;
   currentPage: number;
+  totalElements: number;
 }
 
 export async function fetchProducts(
@@ -58,7 +59,12 @@ export async function fetchProducts(
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Failed to fetch products: ${res.status}`);
   const data: PagedResponse<Product> = await res.json();
-  return { products: data.content, totalPages: data.page.totalPages, currentPage: data.page.number };
+  return {
+    products: data.content,
+    totalPages: data.page.totalPages,
+    currentPage: data.page.number,
+    totalElements: data.page.totalElements,
+  };
 }
 
 export async function fetchProduct(productNumber: string): Promise<Product> {

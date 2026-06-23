@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { fetchProducts } from '../../api/products';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Product, ProductStatus } from '../../api/products';
 import { deleteProduct, patchFeatured, patchStatus } from '../../api/admin';
+import { invalidateProductData, useProducts } from '../../hooks/useProducts';
+import { formatINR } from '../../utils/money';
 import { useTitle } from '../../hooks/useTitle';
 
 const STATUS_OPTIONS: { value: ProductStatus; label: string }[] = [
@@ -17,14 +19,12 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 export function AdminDashboard() {
-  const [products, setProducts] = useState<Product[]>([]);
   const [page, setPage] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
   const [search, setSearch] = useState('');
   const [query, setQuery] = useState<string | undefined>(undefined);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
   useTitle('Admin Products');
 
   useEffect(() => {
@@ -32,55 +32,50 @@ export function AdminDashboard() {
     return () => clearTimeout(t);
   }, [search]);
 
-  useEffect(() => {
-    setLoading(true);
-    fetchProducts(undefined, undefined, page, query, 'createdAt,desc')
-      .then(({ products: data, totalPages: tp }) => {
-        setProducts(data);
-        setTotalPages(tp);
-        setError(null);
-      })
-      .catch((e: Error) => setError(e.message))
-      .finally(() => setLoading(false));
-  }, [page, query]);
+  const { data, isPending, isError, error } = useProducts({ page, search: query, sort: 'createdAt,desc' });
+  const products = data?.products ?? [];
+  const totalPages = data?.totalPages ?? 0;
 
-  const replaceProduct = (updated: Product) =>
-    setProducts((prev) => prev.map((p) => (p.productNumber === updated.productNumber ? updated : p)));
+  const invalidate = () => invalidateProductData(queryClient);
 
-  const handleStatus = async (productNumber: string, status: ProductStatus) => {
+  const statusMutation = useMutation({
+    mutationFn: ({ productNumber, status }: { productNumber: string; status: ProductStatus }) =>
+      patchStatus(productNumber, status),
+    onSuccess: invalidate,
+  });
+  const featuredMutation = useMutation({
+    mutationFn: (product: Product) => patchFeatured(product.productNumber, !product.featured),
+    onSuccess: invalidate,
+  });
+  const deleteMutation = useMutation({
+    mutationFn: (productNumber: string) => deleteProduct(productNumber),
+    onSuccess: invalidate,
+  });
+
+  const run = async (productNumber: string, action: () => Promise<unknown>, failMsg: string) => {
     setBusy(productNumber);
+    setActionError(null);
     try {
-      replaceProduct(await patchStatus(productNumber, status));
+      await action();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to update status.');
+      setActionError(e instanceof Error ? e.message : failMsg);
     } finally {
       setBusy(null);
     }
   };
 
-  const handleFeatured = async (product: Product) => {
-    setBusy(product.productNumber);
-    try {
-      replaceProduct(await patchFeatured(product.productNumber, !product.featured));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to update featured.');
-    } finally {
-      setBusy(null);
-    }
-  };
+  const handleStatus = (productNumber: string, status: ProductStatus) =>
+    run(productNumber, () => statusMutation.mutateAsync({ productNumber, status }), 'Failed to update status.');
 
-  const handleDelete = async (product: Product) => {
+  const handleFeatured = (product: Product) =>
+    run(product.productNumber, () => featuredMutation.mutateAsync(product), 'Failed to update featured.');
+
+  const handleDelete = (product: Product) => {
     if (!window.confirm(`Move "${product.title}" (${product.productNumber}) to Deleted? You can restore it later.`)) return;
-    setBusy(product.productNumber);
-    try {
-      await deleteProduct(product.productNumber);
-      setProducts((prev) => prev.filter((p) => p.productNumber !== product.productNumber));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to delete.');
-    } finally {
-      setBusy(null);
-    }
+    run(product.productNumber, () => deleteMutation.mutateAsync(product.productNumber), 'Failed to delete.');
   };
+
+  const errorMessage = actionError ?? (isError ? (error as Error).message : null);
 
   return (
     <div className="admin-dash">
@@ -97,14 +92,14 @@ export function AdminDashboard() {
         onChange={(e) => setSearch(e.target.value)}
       />
 
-      {error && <p className="admin-error">{error}</p>}
-      {loading && <p className="admin-placeholder">Loading…</p>}
+      {errorMessage && <p className="admin-error">{errorMessage}</p>}
+      {isPending && <p className="admin-placeholder">Loading…</p>}
 
-      {!loading && products.length === 0 && (
+      {!isPending && products.length === 0 && (
         <p className="admin-placeholder">No products found.</p>
       )}
 
-      {!loading && products.length > 0 && (
+      {!isPending && products.length > 0 && (
         <div className="admin-table">
           <div className="admin-row admin-row--head">
             <span>Product</span>
@@ -129,11 +124,11 @@ export function AdminDashboard() {
               <span>
                 {p.salePrice != null ? (
                   <span className="admin-price-sale">
-                    <span className="admin-price-was">₹{Number(p.price).toLocaleString('en-IN')}</span>
-                    <span className="admin-price-now">₹{Number(p.salePrice).toLocaleString('en-IN')}</span>
+                    <span className="admin-price-was">{formatINR(Number(p.price))}</span>
+                    <span className="admin-price-now">{formatINR(Number(p.salePrice))}</span>
                   </span>
                 ) : (
-                  <>₹{Number(p.price).toLocaleString('en-IN')}</>
+                  <>{formatINR(Number(p.price))}</>
                 )}
               </span>
               <span>

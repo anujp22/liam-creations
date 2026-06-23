@@ -80,6 +80,7 @@ public class SecurityConfig {
                         .anyRequest().denyAll()
                 )
                 .addFilterAt(basicFilter, BasicAuthenticationFilter.class)
+                .addFilterBefore(new AdminRateLimitFilter(), BasicAuthenticationFilter.class)
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(entryPoint));
 
         return http.build();

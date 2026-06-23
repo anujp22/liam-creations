@@ -11,6 +11,7 @@ import com.codewithanuj.catalog.product.model.ProductStatus;
 import com.codewithanuj.catalog.product.repository.ProductRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -27,6 +28,8 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -39,20 +42,23 @@ class ProductServiceTest {
     @Mock
     private ProductNumberGenerator productNumberGenerator;
 
+    @Mock
+    private com.codewithanuj.catalog.shared.storage.StorageService storageService;
+
     @InjectMocks
     private ProductService productService;
 
     // ── Read methods ──────────────────────────────────────────────────────────
 
     @Test
-    void getAllProductsReturnsMappedDtoList() {
+    void getProductsWithNoFiltersReturnsMappedDtoList() {
         Pageable pageable = PageRequest.of(0, 20);
         when(productRepository.findByDeletedFalse(pageable)).thenReturn(new PageImpl<>(List.of(
                 product("PRD-001", ProductStatus.IN_STOCK),
                 product("PRD-002", ProductStatus.OUT_OF_STOCK)
         )));
 
-        Page<ProductResponseDto> result = productService.getAllProducts(pageable);
+        Page<ProductResponseDto> result = productService.getProducts(null, null, null, false, pageable);
 
         assertThat(result.getTotalElements()).isEqualTo(2);
         assertThat(result.getContent()).extracting(ProductResponseDto::productNumber)
@@ -65,7 +71,7 @@ class ProductServiceTest {
         when(productRepository.findByStatusAndDeletedFalse(ProductStatus.IN_STOCK, pageable))
                 .thenReturn(new PageImpl<>(List.of(product("PRD-001", ProductStatus.IN_STOCK))));
 
-        Page<ProductResponseDto> result = productService.getProductsByStatus(ProductStatus.IN_STOCK, pageable);
+        Page<ProductResponseDto> result = productService.getProducts(ProductStatus.IN_STOCK, null, null, false, pageable);
 
         assertThat(result.getTotalElements()).isEqualTo(1);
         assertThat(result.getContent().get(0).status()).isEqualTo(ProductStatus.IN_STOCK);
@@ -73,7 +79,7 @@ class ProductServiceTest {
 
     @Test
     void getProductByProductNumberReturnsDtoWhenFound() {
-        when(productRepository.findById("PRD-001"))
+        when(productRepository.findByProductNumberAndDeletedFalse("PRD-001"))
                 .thenReturn(Optional.of(product("PRD-001", ProductStatus.IN_STOCK)));
 
         Optional<ProductResponseDto> result = productService.getProductByProductNumber("PRD-001");
@@ -84,7 +90,7 @@ class ProductServiceTest {
 
     @Test
     void getProductByProductNumberReturnsEmptyWhenNotFound() {
-        when(productRepository.findById("PRD-999")).thenReturn(Optional.empty());
+        when(productRepository.findByProductNumberAndDeletedFalse("PRD-999")).thenReturn(Optional.empty());
 
         Optional<ProductResponseDto> result = productService.getProductByProductNumber("PRD-999");
 
@@ -152,12 +158,31 @@ class ProductServiceTest {
     }
 
     @Test
-    void permanentlyDeleteProductCallsDeleteByIdWhenProductExists() {
-        when(productRepository.existsById("PRD-001")).thenReturn(true);
+    void permanentlyDeleteProductRemovesRowAndStoredImages() {
+        Product existing = product("PRD-001", ProductStatus.IN_STOCK);
+        existing.setImageUrl("/uploads/a.jpg");
+        existing.setImages(new java.util.ArrayList<>(List.of("/uploads/a.jpg", "/uploads/b.jpg")));
+        when(productRepository.findById("PRD-001")).thenReturn(Optional.of(existing));
 
         productService.permanentlyDeleteProduct("PRD-001");
 
-        verify(productRepository).deleteById("PRD-001");
+        verify(productRepository).delete(existing);
+        verify(storageService).delete("/uploads/a.jpg");
+        verify(storageService).delete("/uploads/b.jpg");
+    }
+
+    @Test
+    void permanentlyDeleteProductDeletesEachImageUrlOnlyOnce() {
+        // The primary imageUrl is also the first gallery entry — it must not be deleted twice.
+        Product existing = product("PRD-001", ProductStatus.IN_STOCK);
+        existing.setImageUrl("/uploads/a.jpg");
+        existing.setImages(new java.util.ArrayList<>(List.of("/uploads/a.jpg", "/uploads/b.jpg")));
+        when(productRepository.findById("PRD-001")).thenReturn(Optional.of(existing));
+
+        productService.permanentlyDeleteProduct("PRD-001");
+
+        verify(storageService, times(1)).delete("/uploads/a.jpg");
+        verify(storageService, times(1)).delete("/uploads/b.jpg");
     }
 
     @Test
@@ -191,13 +216,59 @@ class ProductServiceTest {
     }
 
     @Test
+    void createProductRejectsSalePriceNotBelowPrice() {
+        ProductCreateRequest request = new ProductCreateRequest(
+                "Banarasi Silk Saree", "Hand-woven pure silk",
+                new BigDecimal("8500.00"), "INR", ProductStatus.IN_STOCK, true, null,
+                ProductCategory.BRIDAL_SAREES, new BigDecimal("8500.00"), null
+        );
+
+        assertThatThrownBy(() -> productService.createProduct(request))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("salePrice must be greater than 0 and less than price");
+        verify(productRepository, never()).save(any());
+    }
+
+    @Test
+    void createProductRejectsNonPositiveSalePrice() {
+        ProductCreateRequest request = new ProductCreateRequest(
+                "Banarasi Silk Saree", "Hand-woven pure silk",
+                new BigDecimal("8500.00"), "INR", ProductStatus.IN_STOCK, true, null,
+                ProductCategory.BRIDAL_SAREES, BigDecimal.ZERO, null
+        );
+
+        assertThatThrownBy(() -> productService.createProduct(request))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("salePrice must be greater than 0 and less than price");
+        verify(productRepository, never()).save(any());
+    }
+
+    @Test
+    void updateProductRejectsSalePriceNotBelowPrice() {
+        ProductUpdateRequest request = new ProductUpdateRequest(
+                "Updated Saree", "Updated desc",
+                new BigDecimal("9500.00"), "INR", ProductStatus.OUT_OF_STOCK, false, null,
+                ProductCategory.BRIDAL_SAREES, new BigDecimal("10000.00"), null
+        );
+
+        when(productRepository.findById("PRD-001"))
+                .thenReturn(Optional.of(product("PRD-001", ProductStatus.IN_STOCK)));
+
+        assertThatThrownBy(() -> productService.updateProduct("PRD-001", request))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("salePrice must be greater than 0 and less than price");
+        verify(productRepository, never()).save(any());
+    }
+
+    @Test
     void updateProductSavesAndReturnsDto() {
         ProductUpdateRequest request = new ProductUpdateRequest(
                 "Updated Saree", "Updated desc",
                 new BigDecimal("9500.00"), "INR", ProductStatus.OUT_OF_STOCK, false, null, ProductCategory.BRIDAL_SAREES, null, null
         );
 
-        when(productRepository.existsById("PRD-001")).thenReturn(true);
+        when(productRepository.findById("PRD-001"))
+                .thenReturn(Optional.of(product("PRD-001", ProductStatus.IN_STOCK)));
         when(productRepository.save(any())).thenReturn(product("PRD-001", ProductStatus.OUT_OF_STOCK));
 
         ProductResponseDto result = productService.updateProduct("PRD-001", request);
@@ -207,13 +278,32 @@ class ProductServiceTest {
     }
 
     @Test
+    void updateProductPreservesDeletedFlag() {
+        ProductUpdateRequest request = new ProductUpdateRequest(
+                "Updated Saree", "Updated desc",
+                new BigDecimal("9500.00"), "INR", ProductStatus.OUT_OF_STOCK, false, null, ProductCategory.BRIDAL_SAREES, null, null
+        );
+
+        Product existing = product("PRD-001", ProductStatus.IN_STOCK);
+        existing.setDeleted(true);
+        when(productRepository.findById("PRD-001")).thenReturn(Optional.of(existing));
+        when(productRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        productService.updateProduct("PRD-001", request);
+
+        ArgumentCaptor<Product> saved = ArgumentCaptor.forClass(Product.class);
+        verify(productRepository).save(saved.capture());
+        assertThat(saved.getValue().isDeleted()).isTrue();
+    }
+
+    @Test
     void updateProductThrows404WhenProductNotFound() {
         ProductUpdateRequest request = new ProductUpdateRequest(
                 "Ghost", "Missing",
                 new BigDecimal("999.00"), "INR", ProductStatus.IN_STOCK, false, null, ProductCategory.WEDDING_DECOR, null, null
         );
 
-        when(productRepository.existsById("PRD-999")).thenReturn(false);
+        when(productRepository.findById("PRD-999")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> productService.updateProduct("PRD-999", request))
                 .isInstanceOf(ResponseStatusException.class)

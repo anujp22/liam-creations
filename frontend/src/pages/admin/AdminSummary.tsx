@@ -1,22 +1,13 @@
-import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { fetchProducts } from '../../api/products';
-import type { Product } from '../../api/products';
-import { fetchMetrics, type Metrics } from '../../api/admin';
+import { formatINR } from '../../utils/money';
+import { useMetrics, useProducts } from '../../hooks/useProducts';
 import { useTitle } from '../../hooks/useTitle';
 
 export function AdminSummary() {
   useTitle('Admin Summary');
-  const [metrics, setMetrics] = useState<Metrics | null>(null);
-  const [recent, setRecent] = useState<Product[]>([]);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetchMetrics().then(setMetrics).catch((e: Error) => setError(e.message));
-    fetchProducts(undefined, undefined, 0, undefined, 'updatedAt,desc')
-      .then(({ products }) => setRecent(products.slice(0, 5)))
-      .catch(() => {});
-  }, []);
+  const { data: metrics, isError, error } = useMetrics();
+  const { data: recentData } = useProducts({ sort: 'updatedAt,desc' });
+  const recent = (recentData?.products ?? []).slice(0, 5);
 
   const cards = metrics
     ? [
@@ -35,7 +26,7 @@ export function AdminSummary() {
         <Link to="/admin/products/new" className="admin-primary-btn">+ New product</Link>
       </div>
 
-      {error && <p className="admin-error">{error}</p>}
+      {isError && <p className="admin-error">{(error as Error).message}</p>}
 
       <div className="admin-cards">
         {cards.map((c) => (
@@ -62,7 +53,7 @@ export function AdminSummary() {
                   : <span className="admin-thumb admin-thumb--empty" />}
                 <span className="admin-recent-name">{p.title}</span>
                 <span className="admin-recent-num">{p.productNumber}</span>
-                <span className="admin-recent-price">₹{Number(p.salePrice ?? p.price).toLocaleString('en-IN')}</span>
+                <span className="admin-recent-price">{formatINR(Number(p.salePrice ?? p.price))}</span>
               </Link>
             ))}
           </div>

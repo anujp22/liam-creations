@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { effectivePrice } from '../api/products';
+import { formatINR } from '../utils/money';
 import { buildWhatsAppUrl, type CustomerDetails } from '../utils/whatsapp';
 import { useTitle } from '../hooks/useTitle';
 
@@ -23,6 +24,7 @@ export function CartPage() {
 
   const [customer, setCustomer] = useState<CustomerDetails>(loadCustomer);
   const [errors, setErrors] = useState<Partial<Record<keyof CustomerDetails, string>>>({});
+  const [orderError, setOrderError] = useState<string | null>(null);
 
   const setField = (key: keyof CustomerDetails, value: string) => {
     setCustomer((prev) => {
@@ -46,7 +48,12 @@ export function CartPage() {
 
   const handleOrder = () => {
     if (!validate()) return;
-    window.open(buildWhatsAppUrl(items, total, customer), '_blank', 'noopener,noreferrer');
+    try {
+      setOrderError(null);
+      window.open(buildWhatsAppUrl(items, total, customer), '_blank', 'noopener,noreferrer');
+    } catch (e) {
+      setOrderError(e instanceof Error ? e.message : 'Could not start the WhatsApp order.');
+    }
   };
 
   if (items.length === 0) {
@@ -82,9 +89,9 @@ export function CartPage() {
                   <p className="cart-item-title">{product.title}</p>
                   <p className="cart-item-unit">
                     {product.salePrice != null && (
-                      <span className="cart-unit-was">₹{Number(product.price).toLocaleString('en-IN')}</span>
+                      <span className="cart-unit-was">{formatINR(Number(product.price))}</span>
                     )}
-                    ₹{unitPrice.toLocaleString('en-IN')} each
+                    {formatINR(unitPrice)} each
                   </p>
                 </div>
               </div>
@@ -105,7 +112,7 @@ export function CartPage() {
                     +
                   </button>
                 </div>
-                <span className="cart-item-subtotal">₹{lineTotal.toLocaleString('en-IN')}</span>
+                <span className="cart-item-subtotal">{formatINR(lineTotal)}</span>
                 <button
                   className="cart-remove-btn"
                   onClick={() => removeFromCart(product.productNumber)}
@@ -189,8 +196,10 @@ export function CartPage() {
       <div className="cart-footer">
         <div className="cart-total-row">
           <span className="cart-total-label">Total</span>
-          <span className="cart-total-amount">₹{total.toLocaleString('en-IN')}</span>
+          <span className="cart-total-amount">{formatINR(total)}</span>
         </div>
+
+        {orderError && <p className="checkout-error cart-order-error">{orderError}</p>}
 
         <button type="button" onClick={handleOrder} className="whatsapp-btn">
           <svg className="whatsapp-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">

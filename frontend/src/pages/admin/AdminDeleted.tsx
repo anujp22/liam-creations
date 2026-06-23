@@ -1,65 +1,57 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Product } from '../../api/products';
-import { hardDeleteProduct, listDeletedProducts, restoreProduct } from '../../api/admin';
+import { hardDeleteProduct, restoreProduct } from '../../api/admin';
+import { invalidateProductData, useDeletedProducts } from '../../hooks/useProducts';
 import { useTitle } from '../../hooks/useTitle';
 
 export function AdminDeleted() {
-  const [products, setProducts] = useState<Product[]>([]);
   const [page, setPage] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
   useTitle('Admin Deleted');
 
-  const load = (p: number) => {
-    setLoading(true);
-    listDeletedProducts(p)
-      .then(({ products: data, totalPages: tp }) => {
-        setProducts(data);
-        setTotalPages(tp);
-        setError(null);
-      })
-      .catch((e: Error) => setError(e.message))
-      .finally(() => setLoading(false));
-  };
+  const { data, isPending, isError, error } = useDeletedProducts(page);
+  const products = data?.products ?? [];
+  const totalPages = data?.totalPages ?? 0;
 
-  useEffect(() => { load(page); }, [page]);
+  const invalidate = () => invalidateProductData(queryClient);
 
-  const handleRestore = async (product: Product) => {
-    setBusy(product.productNumber);
+  const restoreMutation = useMutation({ mutationFn: restoreProduct, onSuccess: invalidate });
+  const purgeMutation = useMutation({ mutationFn: hardDeleteProduct, onSuccess: invalidate });
+
+  const run = async (productNumber: string, action: () => Promise<unknown>, failMsg: string) => {
+    setBusy(productNumber);
+    setActionError(null);
     try {
-      await restoreProduct(product.productNumber);
-      setProducts((prev) => prev.filter((p) => p.productNumber !== product.productNumber));
+      await action();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to restore.');
+      setActionError(e instanceof Error ? e.message : failMsg);
     } finally {
       setBusy(null);
     }
   };
 
-  const handlePurge = async (product: Product) => {
+  const handleRestore = (product: Product) =>
+    run(product.productNumber, () => restoreMutation.mutateAsync(product.productNumber), 'Failed to restore.');
+
+  const handlePurge = (product: Product) => {
     if (!window.confirm(`Permanently delete "${product.title}" (${product.productNumber})? This cannot be undone. Its number stays reserved.`)) return;
-    setBusy(product.productNumber);
-    try {
-      await hardDeleteProduct(product.productNumber);
-      setProducts((prev) => prev.filter((p) => p.productNumber !== product.productNumber));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to delete.');
-    } finally {
-      setBusy(null);
-    }
+    run(product.productNumber, () => purgeMutation.mutateAsync(product.productNumber), 'Failed to delete.');
   };
+
+  const errorMessage = actionError ?? (isError ? (error as Error).message : null);
 
   return (
     <div className="admin-deleted">
       <h1 className="admin-dash-title">Deleted products</h1>
 
-      {error && <p className="admin-error">{error}</p>}
-      {loading && <p className="admin-placeholder">Loading…</p>}
-      {!loading && products.length === 0 && <p className="admin-placeholder">Nothing in the trash.</p>}
+      {errorMessage && <p className="admin-error">{errorMessage}</p>}
+      {isPending && <p className="admin-placeholder">Loading…</p>}
+      {!isPending && products.length === 0 && <p className="admin-placeholder">Nothing in the trash.</p>}
 
-      {!loading && products.length > 0 && (
+      {!isPending && products.length > 0 && (
         <div className="admin-table">
           {products.map((p) => (
             <div key={p.productNumber} className={`admin-row admin-row--deleted${busy === p.productNumber ? ' admin-row--busy' : ''}`}>

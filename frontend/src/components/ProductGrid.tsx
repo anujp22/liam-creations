@@ -1,17 +1,10 @@
 import { useEffect, useState } from 'react';
-import { fetchProducts } from '../api/products';
-import type { Product, ProductCategory } from '../api/products';
+import type { ProductCategory } from '../api/products';
 import { ProductCard } from './ProductCard';
 import { CategoryFilter } from './CategoryFilter';
 import { SortSelect } from './SortSelect';
+import { useProducts } from '../hooks/useProducts';
 import { useTitle } from '../hooks/useTitle';
-
-interface FetchState {
-  loading: boolean;
-  error: string | null;
-  products: Product[];
-  totalPages: number;
-}
 
 export function ProductGrid() {
   const [category, setCategory] = useState<ProductCategory | undefined>(undefined);
@@ -19,13 +12,6 @@ export function ProductGrid() {
   const [search, setSearch] = useState<string | undefined>(undefined);
   const [sort, setSort] = useState('title,asc');
   const [page, setPage] = useState(0);
-  const [count, setCount] = useState<number>(0);
-  const [{ loading, error, products, totalPages }, setFetchState] = useState<FetchState>({
-    loading: true,
-    error: null,
-    products: [],
-    totalPages: 0,
-  });
   const handleCategoryChange = (c: ProductCategory | undefined) => { setCategory(c); setPage(0); };
   const handleSortChange = (s: string) => { setSort(s); setPage(0); };
   useTitle('Liams Creations — Marriage Essentials', { brandOnly: true });
@@ -38,15 +24,10 @@ export function ProductGrid() {
     return () => clearTimeout(timer);
   }, [searchInput]);
 
-  useEffect(() => {
-    setFetchState((prev) => ({ ...prev, loading: true }));
-    fetchProducts(undefined, category, page, search, sort)
-      .then(({ products: data, totalPages: tp }) => {
-        setFetchState({ loading: false, error: null, products: data, totalPages: tp });
-        setCount(data.length);
-      })
-      .catch((e: Error) => setFetchState({ loading: false, error: e.message, products: [], totalPages: 0 }));
-  }, [category, page, search, sort]);
+  const { data, isPending, isError, error } = useProducts({ category, page, search, sort });
+  const products = data?.products ?? [];
+  const totalPages = data?.totalPages ?? 0;
+  const totalElements = data?.totalElements ?? 0;
 
   return (
     <>
@@ -61,14 +42,14 @@ export function ProductGrid() {
         <CategoryFilter active={category} onChange={handleCategoryChange} />
         <SortSelect value={sort} onChange={handleSortChange} />
       </div>
-      {loading && <p className="grid-message">Loading products...</p>}
-      {error && <p className="grid-message grid-error">{error}</p>}
-      {!loading && !error && products.length === 0 && (
+      {isPending && <p className="grid-message">Loading products...</p>}
+      {isError && <p className="grid-message grid-error">{(error as Error).message}</p>}
+      {!isPending && !isError && products.length === 0 && (
         <p className="grid-message">No products found.</p>
       )}
-      {!loading && !error && products.length > 0 && (
+      {!isPending && !isError && products.length > 0 && (
         <>
-          <p className="grid-count">Showing {count} products</p>
+          <p className="grid-count">Showing {totalElements} products</p>
           <div className="product-grid">
             {products.map((p) => (
               <ProductCard key={p.productNumber} product={p} />

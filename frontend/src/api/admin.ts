@@ -128,7 +128,12 @@ export function hardDeleteProduct(productNumber: string): Promise<void> {
 
 export async function listDeletedProducts(page = 0): Promise<ProductPage> {
   const data = await adminRequest<PagedResponse>(`/api/admin/products/deleted?page=${page}`);
-  return { products: data.content, totalPages: data.page.totalPages, currentPage: data.page.number };
+  return {
+    products: data.content,
+    totalPages: data.page.totalPages,
+    currentPage: data.page.number,
+    totalElements: data.page.totalElements,
+  };
 }
 
 export function fetchMetrics(): Promise<Metrics> {

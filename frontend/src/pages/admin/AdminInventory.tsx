@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'react';
-import { fetchMetrics, type Metrics } from '../../api/admin';
+import { useMetrics } from '../../hooks/useProducts';
 import { useTitle } from '../../hooks/useTitle';
 
 const STATUS_LABELS: Record<string, string> = {
@@ -32,15 +31,10 @@ function Bars({ data, labels }: { data: Record<string, number>; labels: Record<s
 }
 
 export function AdminInventory() {
-  const [metrics, setMetrics] = useState<Metrics | null>(null);
-  const [error, setError] = useState<string | null>(null);
   useTitle('Admin Inventory');
+  const { data: metrics, isError, error } = useMetrics();
 
-  useEffect(() => {
-    fetchMetrics().then(setMetrics).catch((e: Error) => setError(e.message));
-  }, []);
-
-  if (error) return <p className="admin-error">{error}</p>;
+  if (isError) return <p className="admin-error">{(error as Error).message}</p>;
   if (!metrics) return <p className="admin-placeholder">Loading…</p>;
 
   const cards = [

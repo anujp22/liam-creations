@@ -11,6 +11,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OrderColumn;
 import jakarta.persistence.Table;
 import jakarta.persistence.Column;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -34,10 +35,14 @@ public class Product {
     private ProductStatus status;
     private boolean featured;
     private String imageUrl;
-    @ElementCollection(fetch = FetchType.EAGER)
+    // Lazy + batched: EAGER on a collection forces in-memory pagination of the
+    // parent query (HHH000104). @BatchSize loads images for up to 30 products in
+    // one extra query, avoiding N+1 across a page.
+    @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "product_images", joinColumns = @JoinColumn(name = "product_number"))
     @OrderColumn(name = "sort_order")
     @Column(name = "image_url", length = 1000)
+    @BatchSize(size = 30)
     private List<String> images = new ArrayList<>();
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -77,18 +82,25 @@ public class Product {
 
     public String getProductNumber() { return productNumber; }
     public String getTitle() { return title; }
+    public void setTitle(String title) { this.title = title; }
     public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
     public BigDecimal getPrice() { return price; }
+    public void setPrice(BigDecimal price) { this.price = price; }
     public BigDecimal getSalePrice() { return salePrice; }
     public void setSalePrice(BigDecimal salePrice) { this.salePrice = salePrice; }
     public String getCurrency() { return currency; }
+    public void setCurrency(String currency) { this.currency = currency; }
     public ProductStatus getStatus() { return status; }
+    public void setStatus(ProductStatus status) { this.status = status; }
     public boolean isFeatured() { return featured; }
+    public void setFeatured(boolean featured) { this.featured = featured; }
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
     public List<String> getImages() { return images; }
     public void setImages(List<String> images) { this.images = (images == null) ? new ArrayList<>() : images; }
     public ProductCategory getCategory() { return category; }
+    public void setCategory(ProductCategory category) { this.category = category; }
     public boolean isDeleted() { return deleted; }
     public void setDeleted(boolean deleted) { this.deleted = deleted; }
     public Instant getCreatedAt() { return createdAt; }

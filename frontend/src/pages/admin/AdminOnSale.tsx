@@ -1,29 +1,24 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { fetchProducts } from '../../api/products';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Product } from '../../api/products';
 import { updateProduct } from '../../api/admin';
+import { formatINR } from '../../utils/money';
+import { invalidateProductData, useProducts } from '../../hooks/useProducts';
 import { useTitle } from '../../hooks/useTitle';
 
 export function AdminOnSale() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
   useTitle('Admin On Sale');
 
-  useEffect(() => {
-    fetchProducts(undefined, undefined, 0, undefined, 'updatedAt,desc', true)
-      .then(({ products: data }) => setProducts(data))
-      .catch((e: Error) => setError(e.message))
-      .finally(() => setLoading(false));
-  }, []);
+  const { data, isPending: loading, isError, error } = useProducts({ sort: 'updatedAt,desc', onSale: true });
+  const products = data?.products ?? [];
 
-  const removeSale = async (p: Product) => {
-    if (!window.confirm(`Remove the sale price from "${p.title}"?`)) return;
-    setBusy(p.productNumber);
-    try {
-      await updateProduct(p.productNumber, {
+  const removeSaleMutation = useMutation({
+    mutationFn: (p: Product) =>
+      updateProduct(p.productNumber, {
         title: p.title,
         description: p.description,
         price: p.price,
@@ -32,21 +27,32 @@ export function AdminOnSale() {
         status: p.status,
         featured: p.featured,
         imageUrl: p.imageUrl,
+        images: p.images ?? [],
         category: p.category,
-      });
-      setProducts((prev) => prev.filter((x) => x.productNumber !== p.productNumber));
+      }),
+    onSuccess: () => invalidateProductData(queryClient),
+  });
+
+  const removeSale = async (p: Product) => {
+    if (!window.confirm(`Remove the sale price from "${p.title}"?`)) return;
+    setBusy(p.productNumber);
+    setActionError(null);
+    try {
+      await removeSaleMutation.mutateAsync(p);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to remove sale.');
+      setActionError(e instanceof Error ? e.message : 'Failed to remove sale.');
     } finally {
       setBusy(null);
     }
   };
 
+  const errorMessage = actionError ?? (isError ? (error as Error).message : null);
+
   return (
     <div className="admin-onsale">
       <h1 className="admin-dash-title">On Sale</h1>
 
-      {error && <p className="admin-error">{error}</p>}
+      {errorMessage && <p className="admin-error">{errorMessage}</p>}
       {loading && <p className="admin-placeholder">Loading…</p>}
       {!loading && products.length === 0 && (
         <p className="admin-placeholder">No products are on sale. Set a sale price when editing a product.</p>
@@ -66,8 +72,8 @@ export function AdminOnSale() {
                 </span>
               </span>
               <span className="admin-price-sale">
-                <span className="admin-price-was">₹{Number(p.price).toLocaleString('en-IN')}</span>
-                <span className="admin-price-now">₹{Number(p.salePrice).toLocaleString('en-IN')}</span>
+                <span className="admin-price-was">{formatINR(Number(p.price))}</span>
+                <span className="admin-price-now">{formatINR(Number(p.salePrice))}</span>
               </span>
               <span className="admin-cell-actions">
                 <Link to={`/admin/products/${p.productNumber}/edit`} className="admin-link-btn">Edit</Link>
