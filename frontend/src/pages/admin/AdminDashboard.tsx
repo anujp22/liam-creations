@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { fetchProducts } from '../../api/products';
 import type { Product, ProductStatus } from '../../api/products';
 import { deleteProduct, patchFeatured, patchStatus } from '../../api/admin';
+import { useTitle } from '../../hooks/useTitle';
 
 const STATUS_OPTIONS: { value: ProductStatus; label: string }[] = [
   { value: 'IN_STOCK', label: 'In stock' },
@@ -24,6 +25,7 @@ export function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  useTitle('Admin Products');
 
   useEffect(() => {
     const t = setTimeout(() => { setQuery(search.trim() || undefined); setPage(0); }, 400);

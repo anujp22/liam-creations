@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { fetchMetrics, type Metrics } from '../../api/admin';
+import { useTitle } from '../../hooks/useTitle';
 
 const STATUS_LABELS: Record<string, string> = {
   IN_STOCK: 'In stock',
@@ -33,6 +34,7 @@ function Bars({ data, labels }: { data: Record<string, number>; labels: Record<s
 export function AdminInventory() {
   const [metrics, setMetrics] = useState<Metrics | null>(null);
   const [error, setError] = useState<string | null>(null);
+  useTitle('Admin Inventory');
 
   useEffect(() => {
     fetchMetrics().then(setMetrics).catch((e: Error) => setError(e.message));

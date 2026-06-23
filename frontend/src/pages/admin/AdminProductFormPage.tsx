@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { fetchProduct } from '../../api/products';
 import type { ProductCategory, ProductStatus } from '../../api/products';
 import { createProduct, updateProduct } from '../../api/admin';
+import { useTitle } from '../../hooks/useTitle';
 
 const STATUS_OPTIONS: { value: ProductStatus; label: string }[] = [
   { value: 'IN_STOCK', label: 'In stock' },
@@ -43,6 +44,7 @@ export function AdminProductFormPage() {
   const { productNumber } = useParams<{ productNumber: string }>();
   const isEdit = Boolean(productNumber);
   const navigate = useNavigate();
+  useTitle(isEdit ? 'Edit Product' : 'New Product');
 
   const [form, setForm] = useState<FormState>(EMPTY);
   const [loading, setLoading] = useState(isEdit);

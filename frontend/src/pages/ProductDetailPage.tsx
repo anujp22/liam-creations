@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { fetchProduct } from '../api/products';
 import type { Product } from '../api/products';
 import { useCart } from '../context/CartContext';
+import { useTitle } from '../hooks/useTitle';
 
 export function ProductDetailPage() {
   const { productNumber } = useParams<{ productNumber: string }>();
@@ -11,6 +12,7 @@ export function ProductDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { addToCart, isInCart } = useCart();
+  useTitle(product?.title ?? 'Product');
 
   useEffect(() => {
     if (!productNumber) return;

@@ -3,8 +3,10 @@ import { Link } from 'react-router-dom';
 import { fetchProducts } from '../../api/products';
 import type { Product } from '../../api/products';
 import { fetchMetrics, type Metrics } from '../../api/admin';
+import { useTitle } from '../../hooks/useTitle';
 
 export function AdminSummary() {
+  useTitle('Admin Summary');
   const [metrics, setMetrics] = useState<Metrics | null>(null);
   const [recent, setRecent] = useState<Product[]>([]);
   const [error, setError] = useState<string | null>(null);

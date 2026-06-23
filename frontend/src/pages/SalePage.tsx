@@ -3,14 +3,15 @@ import { Link } from 'react-router-dom';
 import { fetchProducts } from '../api/products';
 import type { Product } from '../api/products';
 import { ProductCard } from '../components/ProductCard';
+import { useTitle } from '../hooks/useTitle';
 
 export function SalePage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  useTitle('Sale');
 
   useEffect(() => {
-    document.title = 'On Sale — Liams Creations';
     fetchProducts(undefined, undefined, 0, undefined, 'createdAt,desc', true)
       .then(({ products: data }) => setProducts(data))
       .catch((e: Error) => setError(e.message))

@@ -1,9 +1,11 @@
 import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { buildWhatsAppUrl } from '../utils/whatsapp';
+import { useTitle } from '../hooks/useTitle';
 
 export function CartPage() {
   const { items, itemCount, total, removeFromCart, updateQuantity, clearCart } = useCart();
+  useTitle('Your Order');
 
   if (items.length === 0) {
     return (

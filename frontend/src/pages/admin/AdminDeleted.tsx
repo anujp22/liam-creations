@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Product } from '../../api/products';
 import { hardDeleteProduct, listDeletedProducts, restoreProduct } from '../../api/admin';
+import { useTitle } from '../../hooks/useTitle';
 
 export function AdminDeleted() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -9,6 +10,7 @@ export function AdminDeleted() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  useTitle('Admin Deleted');
 
   const load = (p: number) => {
     setLoading(true);

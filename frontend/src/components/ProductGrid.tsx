@@ -4,6 +4,7 @@ import type { Product, ProductCategory } from '../api/products';
 import { ProductCard } from './ProductCard';
 import { CategoryFilter } from './CategoryFilter';
 import { SortSelect } from './SortSelect';
+import { useTitle } from '../hooks/useTitle';
 
 interface FetchState {
   loading: boolean;
@@ -27,6 +28,7 @@ export function ProductGrid() {
   });
   const handleCategoryChange = (c: ProductCategory | undefined) => { setCategory(c); setPage(0); };
   const handleSortChange = (s: string) => { setSort(s); setPage(0); };
+  useTitle('Liams Creations — Marriage Essentials', { brandOnly: true });
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -45,10 +47,6 @@ export function ProductGrid() {
       })
       .catch((e: Error) => setFetchState({ loading: false, error: e.message, products: [], totalPages: 0 }));
   }, [category, page, search, sort]);
-
-  useEffect(() => {
-    document.title = `Instagram Catalog — ${count} products`;
-  }, [count]);
 
   return (
     <>

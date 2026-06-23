@@ -2,6 +2,8 @@ import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import logo from '../../assets/logo.png';
 import { useAdminAuth } from '../../context/AdminAuthContext';
+import { SiteFooter } from '../../components/SiteFooter';
+import { useTitle } from '../../hooks/useTitle';
 
 export function AdminLoginPage() {
   const { login } = useAdminAuth();
@@ -10,6 +12,7 @@ export function AdminLoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  useTitle('Admin Sign In');
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -26,11 +29,11 @@ export function AdminLoginPage() {
   };
 
   return (
-    <div className="admin-login">
-      <form className="admin-login-card" onSubmit={handleSubmit}>
-        <img src={logo} alt="" className="admin-login-logo" />
-        <h1 className="admin-login-title">Liams Creations</h1>
-        <p className="admin-login-sub">Admin sign in</p>
+    <div className="admin-login-page">
+      <div className="admin-login">
+        <form className="admin-login-card" onSubmit={handleSubmit}>
+          <img src={logo} alt="Liams Creations" className="admin-login-logo" />
+          <p className="admin-login-sub">Admin Sign In</p>
 
         {error && <p className="admin-login-error">{error}</p>}
 
@@ -59,15 +62,12 @@ export function AdminLoginPage() {
           />
         </label>
 
-        <button type="submit" className="admin-login-btn" disabled={submitting}>
-          {submitting ? 'Signing in…' : 'Sign in'}
-        </button>
-      </form>
-
-      <footer className="admin-login-footer">
-        <span className="admin-login-footer-name">Liams Creations</span>
-        <span className="admin-login-footer-sub">Marriage Essentials</span>
-      </footer>
+          <button type="submit" className="admin-login-btn" disabled={submitting}>
+            {submitting ? 'Signing in…' : 'Sign in'}
+          </button>
+        </form>
+      </div>
+      <SiteFooter />
     </div>
   );
 }
