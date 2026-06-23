@@ -3,14 +3,15 @@ import { Link } from 'react-router-dom';
 import { fetchProducts } from '../api/products';
 import type { Product } from '../api/products';
 import { ProductCard } from '../components/ProductCard';
+import { useTitle } from '../hooks/useTitle';
 
-export function BuiltOnDemandPage() {
+export function BuiltOnRequestPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  useTitle('Built on Request');
 
   useEffect(() => {
-    document.title = 'Built on Demand — Liams Creations';
     fetchProducts('BUILT_ON_REQUEST', undefined, 0, undefined, 'createdAt,desc')
       .then(({ products: data }) => setProducts(data))
       .catch((e: Error) => setError(e.message))
@@ -20,7 +21,7 @@ export function BuiltOnDemandPage() {
   return (
     <div className="sale-page">
       <div className="sale-page-head">
-        <h1 className="sale-page-title">Built on Demand</h1>
+        <h1 className="sale-page-title">Built on Request</h1>
         <p className="sale-page-sub">Made to order, crafted just for you.</p>
       </div>
 
