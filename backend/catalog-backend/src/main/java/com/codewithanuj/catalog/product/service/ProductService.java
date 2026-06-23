@@ -130,75 +130,41 @@ public class ProductService {
 
     @Transactional
     public ProductResponseDto updateProduct(String productNumber, ProductUpdateRequest request) {
-        Product existing = productRepository.findById(productNumber)
+        Product product = productRepository.findById(productNumber)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "Product not found: " + productNumber));
         validateSalePrice(request.price(), request.salePrice());
 
-        Product updated = new Product(
-                productNumber,
-                request.title(),
-                request.description(),
-                request.price(),
-                request.currency(),
-                request.status(),
-                request.featured(),
-                request.imageUrl(),
-                request.category()
-        );
-        updated.setSalePrice(request.salePrice());
-        updated.setDeleted(existing.isDeleted());
-        applyImages(updated, request.images());
+        product.setTitle(request.title());
+        product.setDescription(request.description());
+        product.setPrice(request.price());
+        product.setCurrency(request.currency());
+        product.setStatus(request.status());
+        product.setFeatured(request.featured());
+        product.setImageUrl(request.imageUrl());
+        product.setCategory(request.category());
+        product.setSalePrice(request.salePrice());
+        applyImages(product, request.images());
 
-        return toDto(productRepository.save(updated));
+        return toDto(productRepository.save(product));
     }
 
     @Transactional
     public ProductResponseDto updateFeatured(String productNumber, UpdateFeaturedRequest request) {
-        Product existing = productRepository.findById(productNumber)
+        Product product = productRepository.findById(productNumber)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "Product not found: " + productNumber));
-
-        Product updated = new Product(
-                existing.getProductNumber(),
-                existing.getTitle(),
-                existing.getDescription(),
-                existing.getPrice(),
-                existing.getCurrency(),
-                existing.getStatus(),
-                request.featured(),
-                existing.getImageUrl(),
-                existing.getCategory()
-        );
-        updated.setSalePrice(existing.getSalePrice());
-        updated.setDeleted(existing.isDeleted());
-        updated.setImages(existing.getImages());
-
-        return toDto(productRepository.save(updated));
+        product.setFeatured(request.featured());
+        return toDto(productRepository.save(product));
     }
 
     @Transactional
     public ProductResponseDto updateStatus(String productNumber, UpdateStatusRequest request) {
-        Product existing = productRepository.findById(productNumber)
+        Product product = productRepository.findById(productNumber)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "Product not found: " + productNumber));
-
-        Product updated = new Product(
-                existing.getProductNumber(),
-                existing.getTitle(),
-                existing.getDescription(),
-                existing.getPrice(),
-                existing.getCurrency(),
-                request.status(),
-                existing.isFeatured(),
-                existing.getImageUrl(),
-                existing.getCategory()
-        );
-        updated.setSalePrice(existing.getSalePrice());
-        updated.setDeleted(existing.isDeleted());
-        updated.setImages(existing.getImages());
-
-        return toDto(productRepository.save(updated));
+        product.setStatus(request.status());
+        return toDto(productRepository.save(product));
     }
 
     private ProductResponseDto toDto(Product product) {
