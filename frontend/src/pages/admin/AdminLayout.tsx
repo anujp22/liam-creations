@@ -42,16 +42,13 @@ export function AdminLayout() {
               {n.label}
             </NavLink>
           ))}
-          <span className="admin-nav-item admin-nav-item--disabled" title="Coming soon">Sales · soon</span>
         </nav>
-
-        <Link to="/" className="admin-sidebar-store">← View store</Link>
       </aside>
 
       <div className="admin-content">
         <header className="admin-topbar">
           <span className="admin-topbar-user">
-            Signed in as <strong>{username ?? 'admin'}</strong>
+            Signed in as <strong className="admin-topbar-name">{username ?? 'admin'}</strong>
           </span>
           <button onClick={handleLogout} className="admin-logout">Log out</button>
         </header>

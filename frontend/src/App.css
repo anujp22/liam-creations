@@ -95,6 +95,29 @@
   }
 }
 
+.nav-link {
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--text-h);
+  text-decoration: none;
+
+  &:hover { color: var(--accent-dark); text-decoration: underline; }
+}
+
+.nav-admin {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--accent-dark);
+  text-decoration: none;
+  padding: 6px 14px;
+  border: 1px solid var(--accent-border);
+  border-radius: 18px;
+
+  &:hover { background: var(--accent-bg); }
+}
+
 /* ── Search + toolbar ────────────────────────────────────────────────── */
 
 .search-input {
@@ -981,16 +1004,6 @@
   background: transparent;
 }
 
-.admin-sidebar-store {
-  margin-top: auto;
-  padding: 10px 14px;
-  font-size: 13px;
-  color: var(--accent-dark);
-  text-decoration: none;
-
-  &:hover { text-decoration: underline; }
-}
-
 .admin-content {
   flex: 1;
   min-width: 0;
@@ -1008,7 +1021,8 @@
   background: var(--bg);
 }
 
-.admin-topbar-user { font-size: 13px; color: var(--text); }
+.admin-topbar-user { font-size: 14px; color: var(--text); }
+.admin-topbar-name { color: var(--text-h); text-transform: capitalize; }
 
 .admin-logout {
   padding: 8px 16px;
@@ -1080,9 +1094,11 @@
 }
 
 .admin-card-value {
-  font-family: var(--heading);
-  font-size: 38px;
+  font-family: var(--sans);
+  font-size: 34px;
   font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
   line-height: 1;
   color: var(--text-h);
 }
@@ -1178,26 +1194,6 @@
 }
 
 /* ── Login ───────────────────────────────────────────────────────────── */
-
-.admin-viewbar {
-  margin: 0 -24px;
-  padding: 9px 24px;
-  background: var(--accent-dark);
-  color: #fff;
-  font-size: 13px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 14px;
-  flex-wrap: wrap;
-}
-
-.admin-viewbar-link {
-  color: #fff;
-  font-weight: 600;
-  text-decoration: underline;
-  white-space: nowrap;
-}
 
 .admin-login {
   flex: 1;

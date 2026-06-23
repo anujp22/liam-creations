@@ -11,7 +11,7 @@ export function AdminSummary() {
 
   useEffect(() => {
     fetchMetrics().then(setMetrics).catch((e: Error) => setError(e.message));
-    fetchProducts(undefined, undefined, 0, undefined, 'createdAt,desc')
+    fetchProducts(undefined, undefined, 0, undefined, 'updatedAt,desc')
       .then(({ products }) => setRecent(products.slice(0, 5)))
       .catch(() => {});
   }, []);
@@ -46,7 +46,7 @@ export function AdminSummary() {
 
       <div className="admin-section">
         <div className="admin-section-head">
-          <h2 className="admin-section-title">Recently added</h2>
+          <h2 className="admin-section-title">Recently edited</h2>
           <Link to="/admin/products" className="admin-seeall">View all →</Link>
         </div>
         {recent.length === 0 ? (
