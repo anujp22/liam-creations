@@ -41,9 +41,9 @@ export function ProductGrid() {
   useEffect(() => {
     setFetchState((prev) => ({ ...prev, loading: true }));
     fetchProducts(undefined, category, page, search, sort)
-      .then(({ products: data, totalPages: tp }) => {
+      .then(({ products: data, totalPages: tp, totalElements }) => {
         setFetchState({ loading: false, error: null, products: data, totalPages: tp });
-        setCount(data.length);
+        setCount(totalElements);
       })
       .catch((e: Error) => setFetchState({ loading: false, error: e.message, products: [], totalPages: 0 }));
   }, [category, page, search, sort]);
