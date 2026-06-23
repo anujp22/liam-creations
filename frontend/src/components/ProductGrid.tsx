@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { fetchProducts } from '../api/products';
-import type { Product, ProductCategory, ProductStatus } from '../api/products';
+import type { Product, ProductCategory } from '../api/products';
 import { ProductCard } from './ProductCard';
 import { CategoryFilter } from './CategoryFilter';
 import { SortSelect } from './SortSelect';
-import { StatusFilter } from './StatusFilter';
+import { useTitle } from '../hooks/useTitle';
 
 interface FetchState {
   loading: boolean;
@@ -14,7 +14,6 @@ interface FetchState {
 }
 
 export function ProductGrid() {
-  const [status, setStatus] = useState<ProductStatus | undefined>(undefined);
   const [category, setCategory] = useState<ProductCategory | undefined>(undefined);
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState<string | undefined>(undefined);
@@ -27,10 +26,9 @@ export function ProductGrid() {
     products: [],
     totalPages: 0,
   });
-
-  const handleStatusChange = (s: ProductStatus | undefined) => { setStatus(s); setPage(0); };
   const handleCategoryChange = (c: ProductCategory | undefined) => { setCategory(c); setPage(0); };
   const handleSortChange = (s: string) => { setSort(s); setPage(0); };
+  useTitle('Liams Creations — Marriage Essentials', { brandOnly: true });
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -42,17 +40,13 @@ export function ProductGrid() {
 
   useEffect(() => {
     setFetchState((prev) => ({ ...prev, loading: true }));
-    fetchProducts(status, category, page, search, sort)
+    fetchProducts(undefined, category, page, search, sort)
       .then(({ products: data, totalPages: tp }) => {
         setFetchState({ loading: false, error: null, products: data, totalPages: tp });
         setCount(data.length);
       })
       .catch((e: Error) => setFetchState({ loading: false, error: e.message, products: [], totalPages: 0 }));
-  }, [status, category, page, search, sort]);
-
-  useEffect(() => {
-    document.title = `Instagram Catalog — ${count} products`;
-  }, [count]);
+  }, [category, page, search, sort]);
 
   return (
     <>
@@ -64,7 +58,6 @@ export function ProductGrid() {
         onChange={(e) => setSearchInput(e.target.value)}
       />
       <div className="toolbar">
-        <StatusFilter active={status} onChange={handleStatusChange} />
         <CategoryFilter active={category} onChange={handleCategoryChange} />
         <SortSelect value={sort} onChange={handleSortChange} />
       </div>

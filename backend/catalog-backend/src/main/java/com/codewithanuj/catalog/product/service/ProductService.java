@@ -23,50 +23,99 @@ import java.util.Optional;
 public class ProductService {
 
     private final ProductRepository productRepository;
+    private final ProductNumberGenerator productNumberGenerator;
 
-    public ProductService(ProductRepository productRepository) {
+    public ProductService(ProductRepository productRepository, ProductNumberGenerator productNumberGenerator) {
         this.productRepository = productRepository;
+        this.productNumberGenerator = productNumberGenerator;
     }
 
     public Page<ProductResponseDto> getAllProducts(Pageable pageable) {
-        return productRepository.findAll(pageable).map(this::toDto);
+        return productRepository.findByDeletedFalse(pageable).map(this::toDto);
     }
 
     public Page<ProductResponseDto> getProductsByStatus(ProductStatus status, Pageable pageable) {
-        return productRepository.findByStatus(status, pageable).map(this::toDto);
+        return productRepository.findByStatusAndDeletedFalse(status, pageable).map(this::toDto);
     }
 
     public Page<ProductResponseDto> getProductsByCategory(ProductCategory category, Pageable pageable) {
-        return productRepository.findByCategory(category, pageable).map(this::toDto);
+        return productRepository.findByCategoryAndDeletedFalse(category, pageable).map(this::toDto);
     }
 
     public Page<ProductResponseDto> getProductsByStatusAndCategory(ProductStatus status, ProductCategory category, Pageable pageable) {
-        return productRepository.findByStatusAndCategory(status, category, pageable).map(this::toDto);
+        return productRepository.findByStatusAndCategoryAndDeletedFalse(status, category, pageable).map(this::toDto);
     }
 
-    public Page<ProductResponseDto> getProducts(ProductStatus status, ProductCategory category, String search, Pageable pageable) {
+    public Page<ProductResponseDto> getProducts(ProductStatus status, ProductCategory category, String search, boolean onSale, Pageable pageable) {
+        if (onSale) {
+            return productRepository.findBySalePriceIsNotNullAndDeletedFalse(pageable).map(this::toDto);
+        }
         String normalizedSearch = (search != null && !search.isBlank()) ? search.trim() : null;
         if (normalizedSearch != null) {
             return productRepository.findFiltered(status, category, normalizedSearch, pageable).map(this::toDto);
         }
         if (status != null && category != null) {
-            return productRepository.findByStatusAndCategory(status, category, pageable).map(this::toDto);
+            return productRepository.findByStatusAndCategoryAndDeletedFalse(status, category, pageable).map(this::toDto);
         }
         if (status != null) {
-            return productRepository.findByStatus(status, pageable).map(this::toDto);
+            return productRepository.findByStatusAndDeletedFalse(status, pageable).map(this::toDto);
         }
         if (category != null) {
-            return productRepository.findByCategory(category, pageable).map(this::toDto);
+            return productRepository.findByCategoryAndDeletedFalse(category, pageable).map(this::toDto);
         }
-        return productRepository.findAll(pageable).map(this::toDto);
+        return productRepository.findByDeletedFalse(pageable).map(this::toDto);
+    }
+
+    public Page<ProductResponseDto> getDeletedProducts(Pageable pageable) {
+        return productRepository.findByDeletedTrue(pageable).map(this::toDto);
     }
 
     public Optional<ProductResponseDto> getProductByProductNumber(String productNumber) {
         return productRepository.findById(productNumber).map(this::toDto);
     }
 
+    public com.codewithanuj.catalog.product.dto.MetricsResponseDto getMetrics() {
+        java.util.Map<String, Long> byStatus = new java.util.LinkedHashMap<>();
+        for (ProductStatus status : ProductStatus.values()) {
+            byStatus.put(status.name(), productRepository.countByStatusAndDeletedFalse(status));
+        }
+        java.util.Map<String, Long> byCategory = new java.util.LinkedHashMap<>();
+        for (ProductCategory category : ProductCategory.values()) {
+            byCategory.put(category.name(), productRepository.countByCategoryAndDeletedFalse(category));
+        }
+        return new com.codewithanuj.catalog.product.dto.MetricsResponseDto(
+                productRepository.countByDeletedFalse(),
+                byStatus,
+                byCategory,
+                productRepository.countByFeaturedTrueAndDeletedFalse(),
+                productRepository.countBySalePriceIsNotNullAndDeletedFalse(),
+                productRepository.countByDeletedTrue()
+        );
+    }
+
+    /** Soft delete — hides the product but keeps the row (and its reserved number). */
     @Transactional
     public void deleteProduct(String productNumber) {
+        Product product = productRepository.findById(productNumber)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Product not found: " + productNumber));
+        product.setDeleted(true);
+        productRepository.save(product);
+    }
+
+    /** Brings a soft-deleted product back into the active catalog. */
+    @Transactional
+    public ProductResponseDto restoreProduct(String productNumber) {
+        Product product = productRepository.findById(productNumber)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Product not found: " + productNumber));
+        product.setDeleted(false);
+        return toDto(productRepository.save(product));
+    }
+
+    /** Permanently removes the row. The product number stays reserved by the sequence. */
+    @Transactional
+    public void permanentlyDeleteProduct(String productNumber) {
         if (!productRepository.existsById(productNumber)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                     "Product not found: " + productNumber);
@@ -76,13 +125,10 @@ public class ProductService {
 
     @Transactional
     public ProductResponseDto createProduct(ProductCreateRequest request) {
-        if (productRepository.existsById(request.productNumber())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT,
-                    "Product already exists: " + request.productNumber());
-        }
+        validateSalePrice(request.price(), request.salePrice());
 
         Product product = new Product(
-                request.productNumber(),
+                productNumberGenerator.next(),
                 request.title(),
                 request.description(),
                 request.price(),
@@ -92,6 +138,8 @@ public class ProductService {
                 request.imageUrl(),
                 request.category()
         );
+        product.setSalePrice(request.salePrice());
+        applyImages(product, request.images());
 
         return toDto(productRepository.save(product));
     }
@@ -102,6 +150,7 @@ public class ProductService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                     "Product not found: " + productNumber);
         }
+        validateSalePrice(request.price(), request.salePrice());
 
         Product updated = new Product(
                 productNumber,
@@ -114,6 +163,8 @@ public class ProductService {
                 request.imageUrl(),
                 request.category()
         );
+        updated.setSalePrice(request.salePrice());
+        applyImages(updated, request.images());
 
         return toDto(productRepository.save(updated));
     }
@@ -135,6 +186,9 @@ public class ProductService {
                 existing.getImageUrl(),
                 existing.getCategory()
         );
+        updated.setSalePrice(existing.getSalePrice());
+        updated.setDeleted(existing.isDeleted());
+        updated.setImages(existing.getImages());
 
         return toDto(productRepository.save(updated));
     }
@@ -156,6 +210,9 @@ public class ProductService {
                 existing.getImageUrl(),
                 existing.getCategory()
         );
+        updated.setSalePrice(existing.getSalePrice());
+        updated.setDeleted(existing.isDeleted());
+        updated.setImages(existing.getImages());
 
         return toDto(productRepository.save(updated));
     }
@@ -172,7 +229,28 @@ public class ProductService {
                 product.getImageUrl(),
                 product.getCategory(),
                 product.getCreatedAt(),
-                product.getUpdatedAt()
+                product.getUpdatedAt(),
+                product.getSalePrice(),
+                product.getImages()
         );
+    }
+
+    /** Stores the gallery and keeps the primary imageUrl in sync with the first image. */
+    private void applyImages(Product product, java.util.List<String> images) {
+        java.util.List<String> list = (images == null) ? new java.util.ArrayList<>() : new java.util.ArrayList<>(images);
+        product.setImages(list);
+        if (!list.isEmpty()) {
+            product.setImageUrl(list.get(0));
+        }
+    }
+
+    private void validateSalePrice(java.math.BigDecimal price, java.math.BigDecimal salePrice) {
+        if (salePrice == null) {
+            return;
+        }
+        if (salePrice.signum() <= 0 || salePrice.compareTo(price) >= 0) {
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
+                    "salePrice must be greater than 0 and less than price");
+        }
     }
 }

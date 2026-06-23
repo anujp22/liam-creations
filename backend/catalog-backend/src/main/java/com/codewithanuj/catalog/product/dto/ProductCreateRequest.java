@@ -5,14 +5,12 @@ import com.codewithanuj.catalog.product.model.ProductStatus;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
 
 import java.math.BigDecimal;
+import java.util.List;
 
+// productNumber is assigned automatically by the server (see ProductNumberGenerator).
 public record ProductCreateRequest(
-        @NotBlank
-        @Pattern(regexp = "^PRD-\\d{3,6}$", message = "productNumber must match PRD-001 to PRD-999999")
-        String productNumber,
         @NotBlank
         String title,
         @NotBlank
@@ -27,6 +25,8 @@ public record ProductCreateRequest(
         boolean featured,
         String imageUrl,
         @NotNull
-        ProductCategory category
+        ProductCategory category,
+        BigDecimal salePrice,
+        List<String> images
 ) {
 }

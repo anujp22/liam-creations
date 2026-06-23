@@ -34,6 +34,10 @@ class ValidationExceptionHandlerTest {
     @MockBean
     private ProductService productService;
 
+    // AdminUploadController is also picked up by the broad @WebMvcTest scan
+    @MockBean
+    private com.codewithanuj.catalog.shared.storage.StorageService storageService;
+
     // Registers TestController as a bean so Spring MVC can discover its @PostMapping
     @TestConfiguration
     static class TestConfig {
@@ -53,57 +57,9 @@ class ValidationExceptionHandlerTest {
     }
 
     @Test
-    void returnsValidationErrorWhenProductNumberIsMissing() throws Exception {
-        String body = """
-                {
-                  "title": "Clay Mug",
-                  "description": "Nice mug",
-                  "price": 24.99,
-                  "currency": "USD",
-                  "status": "IN_STOCK",
-                  "featured": true,
-                  "instagramPostUrl": "https://instagram.com/p/001"
-                }
-                """;
-
-        mockMvc.perform(post("/test/products")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(body))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.error").value("Bad Request"))
-                .andExpect(jsonPath("$.message").value(containsString("productNumber")))
-                .andExpect(jsonPath("$.timestamp").isNotEmpty());
-    }
-
-    @Test
-    void returnsValidationErrorWhenProductNumberPatternIsWrong() throws Exception {
-        String body = """
-                {
-                  "productNumber": "ABC-999",
-                  "title": "Clay Mug",
-                  "description": "Nice mug",
-                  "price": 24.99,
-                  "currency": "USD",
-                  "status": "IN_STOCK",
-                  "featured": true,
-                  "instagramPostUrl": "https://instagram.com/p/001"
-                }
-                """;
-
-        mockMvc.perform(post("/test/products")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(body))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.message").value(containsString("PRD-001")));
-    }
-
-    @Test
     void returnsValidationErrorWhenTitleIsMissing() throws Exception {
         String body = """
                 {
-                  "productNumber": "PRD-001",
                   "description": "Nice mug",
                   "price": 24.99,
                   "currency": "USD",
@@ -124,7 +80,6 @@ class ValidationExceptionHandlerTest {
     void returnsValidationErrorWhenPriceIsTooLow() throws Exception {
         String body = """
                 {
-                  "productNumber": "PRD-001",
                   "title": "Clay Mug",
                   "description": "Nice mug",
                   "price": 0.00,

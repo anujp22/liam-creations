@@ -1,15 +1,37 @@
+import { effectivePrice } from '../api/products';
 import type { CartItem } from '../context/CartContext';
 
-export function buildWhatsAppUrl(items: CartItem[], total: number): string {
+export interface CustomerDetails {
+  name: string;
+  phone: string;
+  email: string;
+  address: string;
+  notes: string;
+}
+
+export function buildWhatsAppUrl(items: CartItem[], total: number, customer: CustomerDetails): string {
   const ownerNumber = import.meta.env.VITE_OWNER_WHATSAPP as string;
 
   const lines = items.map(({ product, quantity }) => {
-    const lineTotal = quantity * Number(product.price);
-    return `${quantity}x ${product.title} — ₹${lineTotal.toLocaleString('en-IN')}`;
+    const lineTotal = quantity * effectivePrice(product);
+    const onSale = product.salePrice != null ? ' (sale)' : '';
+    return `${quantity}x ${product.title}${onSale} — ₹${lineTotal.toLocaleString('en-IN')}`;
   });
+
+  const customerLines = [
+    `Name: ${customer.name}`,
+    `Phone: ${customer.phone}`,
+    ...(customer.email.trim() ? [`Email: ${customer.email}`] : []),
+    `Address: ${customer.address}`,
+    ...(customer.notes.trim() ? [`Note: ${customer.notes}`] : []),
+  ];
 
   const message = [
     'Hi! I would like to place an order from your catalog.',
+    '',
+    '*CUSTOMER DETAILS*',
+    '─────────────────────',
+    ...customerLines,
     '',
     '*ORDER SUMMARY*',
     '─────────────────────',

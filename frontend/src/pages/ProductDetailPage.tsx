@@ -3,14 +3,17 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { fetchProduct } from '../api/products';
 import type { Product } from '../api/products';
 import { useCart } from '../context/CartContext';
+import { useTitle } from '../hooks/useTitle';
 
 export function ProductDetailPage() {
   const { productNumber } = useParams<{ productNumber: string }>();
   const [product, setProduct] = useState<Product | null>(null);
+  const [activeImage, setActiveImage] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { addToCart, isInCart } = useCart();
+  useTitle(product?.title ?? 'Product');
 
   useEffect(() => {
     if (!productNumber) return;
@@ -25,6 +28,10 @@ export function ProductDetailPage() {
   if (!product) return null;
 
   const inCart = isInCart(product.productNumber);
+  const gallery = product.images && product.images.length > 0
+    ? product.images
+    : (product.imageUrl ? [product.imageUrl] : []);
+  const mainImage = gallery[Math.min(activeImage, gallery.length - 1)];
 
   return (
     <div className="detail">
@@ -32,17 +39,39 @@ export function ProductDetailPage() {
         ← Back to shop
       </button>
       <div className="detail-card">
-        {product.imageUrl && (
-          <img src={product.imageUrl} alt={product.title} className="detail-image" />
+        {mainImage && (
+          <img src={mainImage} alt={product.title} className="detail-image" />
         )}
-        <span className="product-status">{product.status.replace(/_/g, ' ')}</span>
-        {product.featured && <span className="product-featured">Featured</span>}
+        {gallery.length > 1 && (
+          <div className="detail-thumbs">
+            {gallery.map((url, i) => (
+              <button
+                key={url}
+                type="button"
+                className={`detail-thumb${i === activeImage ? ' detail-thumb--active' : ''}`}
+                onClick={() => setActiveImage(i)}
+              >
+                <img src={url} alt="" />
+              </button>
+            ))}
+          </div>
+        )}
+        <span className="product-badges">
+          <span className={`product-status product-status--${product.status}`}>{product.status.replace(/_/g, ' ')}</span>
+          {product.salePrice != null && <span className="product-sale-badge">Sale</span>}
+          {product.featured && <span className="product-featured">Featured</span>}
+        </span>
         <h2 className="detail-title">{product.title}</h2>
         <p className="detail-description">{product.description}</p>
         <div className="detail-footer">
-          <span className="product-price">
-            ₹{Number(product.price).toLocaleString('en-IN')}
-          </span>
+          {product.salePrice != null ? (
+            <span className="product-price">
+              <span className="product-price-was">₹{Number(product.price).toLocaleString('en-IN')}</span>
+              <span className="product-price-now">₹{Number(product.salePrice).toLocaleString('en-IN')}</span>
+            </span>
+          ) : (
+            <span className="product-price">₹{Number(product.price).toLocaleString('en-IN')}</span>
+          )}
           <button
             className={`add-to-cart-btn${inCart ? ' add-to-cart-btn--in-cart' : ''}`}
             onClick={() => addToCart(product)}

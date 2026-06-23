@@ -1,27 +1,26 @@
 export type ProductStatus = 'IN_STOCK' | 'OUT_OF_STOCK' | 'BUILT_ON_REQUEST';
 
-export type ProductCategory =
-  | 'BRIDAL_SAREES'
-  | 'BRIDAL_LEHENGAS'
-  | 'HALDI_MEHENDI'
-  | 'JEWELLERY'
-  | 'CLAY_POTTERY'
-  | 'PUJA_RITUALS'
-  | 'WEDDING_DECOR'
-  | 'SWEETS_GIFTS';
+export type ProductCategory = 'BRIDAL_SAREES' | 'WEDDING_DECOR';
 
 export interface Product {
   productNumber: string;
   title: string;
   description: string;
   price: number;
+  salePrice?: number | null;
   currency: string;
   status: ProductStatus;
   featured: boolean;
   imageUrl?: string;
+  images?: string[];
   category: ProductCategory;
   createdAt?: string;
   updatedAt?: string;
+}
+
+/** The price a customer actually pays: sale price when set, otherwise the regular price. */
+export function effectivePrice(p: Pick<Product, 'price' | 'salePrice'>): number {
+  return p.salePrice != null ? Number(p.salePrice) : Number(p.price);
 }
 
 interface PagedResponse<T> {
@@ -45,13 +44,15 @@ export async function fetchProducts(
   category?: ProductCategory,
   page = 0,
   search?: string,
-  sort?: string
+  sort?: string,
+  onSale?: boolean
 ): Promise<ProductPage> {
   const params = new URLSearchParams();
   if (status) params.set('status', status);
   if (category) params.set('category', category);
   if (search) params.set('search', search);
   if (sort) params.set('sort', sort);
+  if (onSale) params.set('onSale', 'true');
   params.set('page', String(page));
   const url = `/api/products?${params.toString()}`;
   const res = await fetch(url);

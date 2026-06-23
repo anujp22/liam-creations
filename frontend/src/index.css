@@ -7,11 +7,16 @@
   --blush-soft: #faecea;    /* lighter blush wash */
   --border: #ead9d5;        /* soft rose-tinted border */
   --code-bg: #f7ece9;
-  --accent: #b76e79;        /* rose-gold */
-  --accent-dark: #9c5662;   /* deeper rose for hovers */
+  --accent: #b76e79;        /* rose-gold (decorative) */
+  --accent-dark: #9c5662;   /* deeper rose — used for solid buttons (AA contrast on white) */
   --accent-bg: rgba(183, 110, 121, 0.1);
   --accent-border: rgba(183, 110, 121, 0.45);
   --gold: #c9a24b;          /* featured accent */
+
+  /* Semantic, industry-standard status/feedback colors */
+  --danger: #c0362c;        /* errors, destructive actions, out of stock */
+  --success: #2e7d46;       /* in stock */
+  --warning: #b07d0a;       /* built on request / attention */
   --social-bg: rgba(247, 236, 233, 0.6);
   --shadow:
     rgba(46, 42, 46, 0.08) 0 10px 24px -8px, rgba(46, 42, 46, 0.05) 0 4px 8px -4px;
@@ -37,12 +42,10 @@
 }
 
 #root {
-  width: 1126px;
-  max-width: 100%;
+  width: 100%;
   margin: 0 auto;
   text-align: center;
-  background: var(--bg);
-  border-inline: 1px solid var(--border);
+  background: transparent;
   min-height: 100svh;
   display: flex;
   flex-direction: column;
@@ -51,7 +54,7 @@
 
 body {
   margin: 0;
-  background: var(--blush);
+  background: var(--bg);
 }
 
 h1,

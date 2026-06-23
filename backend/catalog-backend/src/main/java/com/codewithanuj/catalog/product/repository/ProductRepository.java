@@ -11,12 +11,28 @@ import org.springframework.data.repository.query.Param;
 
 public interface ProductRepository extends JpaRepository<Product, String> {
 
-    Page<Product> findByStatus(ProductStatus status, Pageable pageable);
-    Page<Product> findByCategory(ProductCategory category, Pageable pageable);
-    Page<Product> findByStatusAndCategory(ProductStatus status, ProductCategory category, Pageable pageable);
+    // Active (non-deleted) listings used by the storefront and admin product list.
+    Page<Product> findByDeletedFalse(Pageable pageable);
+    Page<Product> findByStatusAndDeletedFalse(ProductStatus status, Pageable pageable);
+    Page<Product> findByCategoryAndDeletedFalse(ProductCategory category, Pageable pageable);
+    Page<Product> findByStatusAndCategoryAndDeletedFalse(ProductStatus status, ProductCategory category, Pageable pageable);
+
+    // Soft-deleted products, for the admin Deleted tab.
+    Page<Product> findByDeletedTrue(Pageable pageable);
+
+    // On-sale products for the storefront Sale section.
+    Page<Product> findBySalePriceIsNotNullAndDeletedFalse(Pageable pageable);
+
+    // Inventory metrics (active = not deleted).
+    long countByDeletedFalse();
+    long countByDeletedTrue();
+    long countByStatusAndDeletedFalse(ProductStatus status);
+    long countByCategoryAndDeletedFalse(ProductCategory category);
+    long countByFeaturedTrueAndDeletedFalse();
+    long countBySalePriceIsNotNullAndDeletedFalse();
 
     // search is guaranteed non-null when called — callers must never pass null here
-    @Query("SELECT p FROM Product p WHERE " +
+    @Query("SELECT p FROM Product p WHERE p.deleted = false AND " +
            "(:status IS NULL OR p.status = :status) AND " +
            "(:category IS NULL OR p.category = :category) AND " +
            "(LOWER(p.title) LIKE LOWER(CONCAT('%', :search, '%')) " +

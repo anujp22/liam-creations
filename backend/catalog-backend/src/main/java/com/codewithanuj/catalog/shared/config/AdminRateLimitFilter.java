@@ -29,7 +29,7 @@ public class AdminRateLimitFilter extends OncePerRequestFilter {
 
         String ip = request.getRemoteAddr();
         Bucket bucket = buckets.computeIfAbsent(ip, k -> Bucket.builder()
-                .addLimit(Bandwidth.builder().capacity(5).refillGreedy(5, Duration.ofMinutes(1)).build())
+                .addLimit(Bandwidth.builder().capacity(60).refillGreedy(60, Duration.ofMinutes(1)).build())
                 .build());
 
         if (bucket.tryConsume(1)) {

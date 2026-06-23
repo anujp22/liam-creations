@@ -11,17 +11,16 @@ import com.codewithanuj.catalog.product.service.ProductService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -31,6 +30,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -38,7 +38,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(AdminProductController.class)
-@Import(AdminProductControllerTest.TestConfig.class)
 @AutoConfigureMockMvc(addFilters = false)
 class AdminProductControllerTest {
 
@@ -50,14 +49,6 @@ class AdminProductControllerTest {
 
     @MockBean
     private ProductService productService;
-
-    @TestConfiguration
-    static class TestConfig {
-        @Bean
-        public ObjectMapper objectMapper() {
-            return new ObjectMapper();
-        }
-    }
 
     // ── DELETE ───────────────────────────────────────────────────────────────
 
@@ -79,13 +70,43 @@ class AdminProductControllerTest {
                 .andExpect(jsonPath("$.message").value("Product not found: PRD-999"));
     }
 
+    // ── Deleted list / restore / permanent ─────────────────────────────────────
+
+    @Test
+    void getDeletedProductsReturns200() throws Exception {
+        when(productService.getDeletedProducts(any()))
+                .thenReturn(new PageImpl<>(List.of(toDto("PRD-001", ProductStatus.IN_STOCK))));
+
+        mockMvc.perform(get("/api/admin/products/deleted"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].productNumber").value("PRD-001"));
+    }
+
+    @Test
+    void restoreProductReturns200() throws Exception {
+        when(productService.restoreProduct("PRD-001"))
+                .thenReturn(toDto("PRD-001", ProductStatus.IN_STOCK));
+
+        mockMvc.perform(post("/api/admin/products/PRD-001/restore"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.productNumber").value("PRD-001"));
+    }
+
+    @Test
+    void permanentlyDeleteProductReturns204() throws Exception {
+        doNothing().when(productService).permanentlyDeleteProduct("PRD-001");
+
+        mockMvc.perform(delete("/api/admin/products/PRD-001/permanent"))
+                .andExpect(status().isNoContent());
+    }
+
     // ── POST ─────────────────────────────────────────────────────────────────
 
     @Test
     void createProductReturns201WhenRequestIsValid() throws Exception {
         ProductCreateRequest request = new ProductCreateRequest(
-                "PRD-010", "Banarasi Silk Saree", "Hand-woven pure silk",
-                new BigDecimal("8500.00"), "INR", ProductStatus.IN_STOCK, true, null, ProductCategory.BRIDAL_SAREES
+                "Banarasi Silk Saree", "Hand-woven pure silk",
+                new BigDecimal("8500.00"), "INR", ProductStatus.IN_STOCK, true, null, ProductCategory.BRIDAL_SAREES, null, null
         );
 
         when(productService.createProduct(any())).thenReturn(toDto("PRD-010", ProductStatus.IN_STOCK));
@@ -97,31 +118,13 @@ class AdminProductControllerTest {
                 .andExpect(jsonPath("$.productNumber").value("PRD-010"));
     }
 
-    @Test
-    void createProductReturns409WhenProductNumberAlreadyExists() throws Exception {
-        ProductCreateRequest request = new ProductCreateRequest(
-                "PRD-001", "Duplicate", "Already exists",
-                new BigDecimal("999.00"), "INR", ProductStatus.IN_STOCK, false, null, ProductCategory.JEWELLERY
-        );
-
-        when(productService.createProduct(any()))
-                .thenThrow(new ResponseStatusException(CONFLICT, "Product already exists: PRD-001"));
-
-        mockMvc.perform(post("/api/admin/products")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.status").value(409))
-                .andExpect(jsonPath("$.message").value("Product already exists: PRD-001"));
-    }
-
     // ── PUT ──────────────────────────────────────────────────────────────────
 
     @Test
     void updateProductReturns200WhenProductExists() throws Exception {
         ProductUpdateRequest request = new ProductUpdateRequest(
                 "Updated Saree", "Updated desc",
-                new BigDecimal("9500.00"), "INR", ProductStatus.OUT_OF_STOCK, false, null, ProductCategory.BRIDAL_SAREES
+                new BigDecimal("9500.00"), "INR", ProductStatus.OUT_OF_STOCK, false, null, ProductCategory.BRIDAL_SAREES, null, null
         );
 
         when(productService.updateProduct(eq("PRD-001"), any()))
@@ -138,7 +141,7 @@ class AdminProductControllerTest {
     void updateProductReturns404WhenProductDoesNotExist() throws Exception {
         ProductUpdateRequest request = new ProductUpdateRequest(
                 "Ghost Product", "Does not exist",
-                new BigDecimal("999.00"), "INR", ProductStatus.IN_STOCK, false, null, ProductCategory.JEWELLERY
+                new BigDecimal("999.00"), "INR", ProductStatus.IN_STOCK, false, null, ProductCategory.WEDDING_DECOR, null, null
         );
 
         when(productService.updateProduct(eq("PRD-999"), any()))
@@ -217,7 +220,7 @@ class AdminProductControllerTest {
     private ProductResponseDto toDto(String productNumber, ProductStatus status) {
         return new ProductResponseDto(
                 productNumber, "Sample Product", "A product",
-                new BigDecimal("1999.00"), "INR", status, true, null, ProductCategory.JEWELLERY, null, null
+                new BigDecimal("1999.00"), "INR", status, true, null, ProductCategory.WEDDING_DECOR, null, null, null, null
         );
     }
 }
