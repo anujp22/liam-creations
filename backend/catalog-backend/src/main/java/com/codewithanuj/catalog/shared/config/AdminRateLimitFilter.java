@@ -38,7 +38,7 @@ public class AdminRateLimitFilter extends OncePerRequestFilter {
             response.setStatus(429);
             response.setContentType("application/json");
             response.getWriter().write("""
-                    {"status":429,"error":"Too Many Requests","message":"Rate limit exceeded. Max 5 requests per minute per IP."}
+                    {"status":429,"error":"Too Many Requests","message":"Rate limit exceeded. Max 60 requests per minute per IP."}
                     """);
         }
     }
