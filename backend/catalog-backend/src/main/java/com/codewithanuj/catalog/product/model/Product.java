@@ -11,6 +11,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OrderColumn;
 import jakarta.persistence.Table;
 import jakarta.persistence.Column;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -34,10 +35,14 @@ public class Product {
     private ProductStatus status;
     private boolean featured;
     private String imageUrl;
-    @ElementCollection(fetch = FetchType.EAGER)
+    // Lazy + batched: EAGER on a collection forces in-memory pagination of the
+    // parent query (HHH000104). @BatchSize loads images for up to 30 products in
+    // one extra query, avoiding N+1 across a page.
+    @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "product_images", joinColumns = @JoinColumn(name = "product_number"))
     @OrderColumn(name = "sort_order")
     @Column(name = "image_url", length = 1000)
+    @BatchSize(size = 30)
     private List<String> images = new ArrayList<>();
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

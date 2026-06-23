@@ -30,6 +30,7 @@ public class ProductService {
         this.productNumberGenerator = productNumberGenerator;
     }
 
+    @Transactional(readOnly = true)
     public Page<ProductResponseDto> getProducts(ProductStatus status, ProductCategory category, String search, boolean onSale, Pageable pageable) {
         if (onSale) {
             return productRepository.findBySalePriceIsNotNullAndDeletedFalse(pageable).map(this::toDto);
@@ -50,10 +51,12 @@ public class ProductService {
         return productRepository.findByDeletedFalse(pageable).map(this::toDto);
     }
 
+    @Transactional(readOnly = true)
     public Page<ProductResponseDto> getDeletedProducts(Pageable pageable) {
         return productRepository.findByDeletedTrue(pageable).map(this::toDto);
     }
 
+    @Transactional(readOnly = true)
     public Optional<ProductResponseDto> getProductByProductNumber(String productNumber) {
         return productRepository.findByProductNumberAndDeletedFalse(productNumber).map(this::toDto);
     }
@@ -181,7 +184,10 @@ public class ProductService {
                 product.getCreatedAt(),
                 product.getUpdatedAt(),
                 product.getSalePrice(),
-                product.getImages()
+                // Copy into a detached list: forces the lazy collection to load
+                // while the session is open, so JSON serialization can't trip a
+                // LazyInitializationException (open-in-view is disabled).
+                new java.util.ArrayList<>(product.getImages())
         );
     }
 
