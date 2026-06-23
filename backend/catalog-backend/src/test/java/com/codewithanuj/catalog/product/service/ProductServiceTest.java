@@ -11,6 +11,7 @@ import com.codewithanuj.catalog.product.model.ProductStatus;
 import com.codewithanuj.catalog.product.repository.ProductRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -197,7 +198,8 @@ class ProductServiceTest {
                 new BigDecimal("9500.00"), "INR", ProductStatus.OUT_OF_STOCK, false, null, ProductCategory.BRIDAL_SAREES, null, null
         );
 
-        when(productRepository.existsById("PRD-001")).thenReturn(true);
+        when(productRepository.findById("PRD-001"))
+                .thenReturn(Optional.of(product("PRD-001", ProductStatus.IN_STOCK)));
         when(productRepository.save(any())).thenReturn(product("PRD-001", ProductStatus.OUT_OF_STOCK));
 
         ProductResponseDto result = productService.updateProduct("PRD-001", request);
@@ -207,13 +209,32 @@ class ProductServiceTest {
     }
 
     @Test
+    void updateProductPreservesDeletedFlag() {
+        ProductUpdateRequest request = new ProductUpdateRequest(
+                "Updated Saree", "Updated desc",
+                new BigDecimal("9500.00"), "INR", ProductStatus.OUT_OF_STOCK, false, null, ProductCategory.BRIDAL_SAREES, null, null
+        );
+
+        Product existing = product("PRD-001", ProductStatus.IN_STOCK);
+        existing.setDeleted(true);
+        when(productRepository.findById("PRD-001")).thenReturn(Optional.of(existing));
+        when(productRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        productService.updateProduct("PRD-001", request);
+
+        ArgumentCaptor<Product> saved = ArgumentCaptor.forClass(Product.class);
+        verify(productRepository).save(saved.capture());
+        assertThat(saved.getValue().isDeleted()).isTrue();
+    }
+
+    @Test
     void updateProductThrows404WhenProductNotFound() {
         ProductUpdateRequest request = new ProductUpdateRequest(
                 "Ghost", "Missing",
                 new BigDecimal("999.00"), "INR", ProductStatus.IN_STOCK, false, null, ProductCategory.WEDDING_DECOR, null, null
         );
 
-        when(productRepository.existsById("PRD-999")).thenReturn(false);
+        when(productRepository.findById("PRD-999")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> productService.updateProduct("PRD-999", request))
                 .isInstanceOf(ResponseStatusException.class)

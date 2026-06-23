@@ -146,10 +146,9 @@ public class ProductService {
 
     @Transactional
     public ProductResponseDto updateProduct(String productNumber, ProductUpdateRequest request) {
-        if (!productRepository.existsById(productNumber)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                    "Product not found: " + productNumber);
-        }
+        Product existing = productRepository.findById(productNumber)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Product not found: " + productNumber));
         validateSalePrice(request.price(), request.salePrice());
 
         Product updated = new Product(
@@ -164,6 +163,7 @@ public class ProductService {
                 request.category()
         );
         updated.setSalePrice(request.salePrice());
+        updated.setDeleted(existing.isDeleted());
         applyImages(updated, request.images());
 
         return toDto(productRepository.save(updated));
