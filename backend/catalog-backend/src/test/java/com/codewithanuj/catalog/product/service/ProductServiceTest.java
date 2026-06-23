@@ -46,14 +46,14 @@ class ProductServiceTest {
     // ── Read methods ──────────────────────────────────────────────────────────
 
     @Test
-    void getAllProductsReturnsMappedDtoList() {
+    void getProductsWithNoFiltersReturnsMappedDtoList() {
         Pageable pageable = PageRequest.of(0, 20);
         when(productRepository.findByDeletedFalse(pageable)).thenReturn(new PageImpl<>(List.of(
                 product("PRD-001", ProductStatus.IN_STOCK),
                 product("PRD-002", ProductStatus.OUT_OF_STOCK)
         )));
 
-        Page<ProductResponseDto> result = productService.getAllProducts(pageable);
+        Page<ProductResponseDto> result = productService.getProducts(null, null, null, false, pageable);
 
         assertThat(result.getTotalElements()).isEqualTo(2);
         assertThat(result.getContent()).extracting(ProductResponseDto::productNumber)
@@ -66,7 +66,7 @@ class ProductServiceTest {
         when(productRepository.findByStatusAndDeletedFalse(ProductStatus.IN_STOCK, pageable))
                 .thenReturn(new PageImpl<>(List.of(product("PRD-001", ProductStatus.IN_STOCK))));
 
-        Page<ProductResponseDto> result = productService.getProductsByStatus(ProductStatus.IN_STOCK, pageable);
+        Page<ProductResponseDto> result = productService.getProducts(ProductStatus.IN_STOCK, null, null, false, pageable);
 
         assertThat(result.getTotalElements()).isEqualTo(1);
         assertThat(result.getContent().get(0).status()).isEqualTo(ProductStatus.IN_STOCK);

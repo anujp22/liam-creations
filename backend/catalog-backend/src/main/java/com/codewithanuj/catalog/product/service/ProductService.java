@@ -30,22 +30,6 @@ public class ProductService {
         this.productNumberGenerator = productNumberGenerator;
     }
 
-    public Page<ProductResponseDto> getAllProducts(Pageable pageable) {
-        return productRepository.findByDeletedFalse(pageable).map(this::toDto);
-    }
-
-    public Page<ProductResponseDto> getProductsByStatus(ProductStatus status, Pageable pageable) {
-        return productRepository.findByStatusAndDeletedFalse(status, pageable).map(this::toDto);
-    }
-
-    public Page<ProductResponseDto> getProductsByCategory(ProductCategory category, Pageable pageable) {
-        return productRepository.findByCategoryAndDeletedFalse(category, pageable).map(this::toDto);
-    }
-
-    public Page<ProductResponseDto> getProductsByStatusAndCategory(ProductStatus status, ProductCategory category, Pageable pageable) {
-        return productRepository.findByStatusAndCategoryAndDeletedFalse(status, category, pageable).map(this::toDto);
-    }
-
     public Page<ProductResponseDto> getProducts(ProductStatus status, ProductCategory category, String search, boolean onSale, Pageable pageable) {
         if (onSale) {
             return productRepository.findBySalePriceIsNotNullAndDeletedFalse(pageable).map(this::toDto);
