@@ -40,6 +40,9 @@ class ProductServiceTest {
     @Mock
     private ProductNumberGenerator productNumberGenerator;
 
+    @Mock
+    private com.codewithanuj.catalog.shared.storage.StorageService storageService;
+
     @InjectMocks
     private ProductService productService;
 
@@ -153,12 +156,17 @@ class ProductServiceTest {
     }
 
     @Test
-    void permanentlyDeleteProductCallsDeleteByIdWhenProductExists() {
-        when(productRepository.existsById("PRD-001")).thenReturn(true);
+    void permanentlyDeleteProductRemovesRowAndStoredImages() {
+        Product existing = product("PRD-001", ProductStatus.IN_STOCK);
+        existing.setImageUrl("/uploads/a.jpg");
+        existing.setImages(new java.util.ArrayList<>(List.of("/uploads/a.jpg", "/uploads/b.jpg")));
+        when(productRepository.findById("PRD-001")).thenReturn(Optional.of(existing));
 
         productService.permanentlyDeleteProduct("PRD-001");
 
-        verify(productRepository).deleteById("PRD-001");
+        verify(productRepository).delete(existing);
+        verify(storageService).delete("/uploads/a.jpg");
+        verify(storageService).delete("/uploads/b.jpg");
     }
 
     @Test

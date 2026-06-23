@@ -24,10 +24,14 @@ public class ProductService {
 
     private final ProductRepository productRepository;
     private final ProductNumberGenerator productNumberGenerator;
+    private final com.codewithanuj.catalog.shared.storage.StorageService storageService;
 
-    public ProductService(ProductRepository productRepository, ProductNumberGenerator productNumberGenerator) {
+    public ProductService(ProductRepository productRepository,
+                          ProductNumberGenerator productNumberGenerator,
+                          com.codewithanuj.catalog.shared.storage.StorageService storageService) {
         this.productRepository = productRepository;
         this.productNumberGenerator = productNumberGenerator;
+        this.storageService = storageService;
     }
 
     @Transactional(readOnly = true)
@@ -103,11 +107,20 @@ public class ProductService {
     /** Permanently removes the row. The product number stays reserved by the sequence. */
     @Transactional
     public void permanentlyDeleteProduct(String productNumber) {
-        if (!productRepository.existsById(productNumber)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                    "Product not found: " + productNumber);
+        Product product = productRepository.findById(productNumber)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Product not found: " + productNumber));
+
+        // Gather every stored image (gallery + primary thumbnail) before the row goes.
+        java.util.Set<String> urls = new java.util.LinkedHashSet<>(product.getImages());
+        if (product.getImageUrl() != null) {
+            urls.add(product.getImageUrl());
         }
-        productRepository.deleteById(productNumber);
+
+        productRepository.delete(product);
+
+        // Best-effort file cleanup; failures here must not fail the delete.
+        urls.forEach(storageService::delete);
     }
 
     @Transactional
