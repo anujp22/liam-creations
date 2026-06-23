@@ -8,6 +8,7 @@ import { useTitle } from '../hooks/useTitle';
 export function ProductDetailPage() {
   const { productNumber } = useParams<{ productNumber: string }>();
   const [product, setProduct] = useState<Product | null>(null);
+  const [activeImage, setActiveImage] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -27,6 +28,10 @@ export function ProductDetailPage() {
   if (!product) return null;
 
   const inCart = isInCart(product.productNumber);
+  const gallery = product.images && product.images.length > 0
+    ? product.images
+    : (product.imageUrl ? [product.imageUrl] : []);
+  const mainImage = gallery[Math.min(activeImage, gallery.length - 1)];
 
   return (
     <div className="detail">
@@ -34,8 +39,22 @@ export function ProductDetailPage() {
         ← Back to shop
       </button>
       <div className="detail-card">
-        {product.imageUrl && (
-          <img src={product.imageUrl} alt={product.title} className="detail-image" />
+        {mainImage && (
+          <img src={mainImage} alt={product.title} className="detail-image" />
+        )}
+        {gallery.length > 1 && (
+          <div className="detail-thumbs">
+            {gallery.map((url, i) => (
+              <button
+                key={url}
+                type="button"
+                className={`detail-thumb${i === activeImage ? ' detail-thumb--active' : ''}`}
+                onClick={() => setActiveImage(i)}
+              >
+                <img src={url} alt="" />
+              </button>
+            ))}
+          </div>
         )}
         <span className="product-badges">
           <span className={`product-status product-status--${product.status}`}>{product.status.replace(/_/g, ' ')}</span>

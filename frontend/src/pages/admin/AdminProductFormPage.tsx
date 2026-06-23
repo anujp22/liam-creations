@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { fetchProduct } from '../../api/products';
 import type { ProductCategory, ProductStatus } from '../../api/products';
 import { createProduct, updateProduct } from '../../api/admin';
+import { ImageUploader } from '../../components/ImageUploader';
 import { useTitle } from '../../hooks/useTitle';
 
 const STATUS_OPTIONS: { value: ProductStatus; label: string }[] = [
@@ -25,7 +26,7 @@ interface FormState {
   status: ProductStatus;
   category: ProductCategory;
   featured: boolean;
-  imageUrl: string;
+  images: string[];
 }
 
 const EMPTY: FormState = {
@@ -37,7 +38,7 @@ const EMPTY: FormState = {
   status: 'IN_STOCK',
   category: 'BRIDAL_SAREES',
   featured: false,
-  imageUrl: '',
+  images: [],
 };
 
 export function AdminProductFormPage() {
@@ -64,7 +65,7 @@ export function AdminProductFormPage() {
           status: p.status,
           category: p.category,
           featured: p.featured,
-          imageUrl: p.imageUrl ?? '',
+          images: p.images && p.images.length > 0 ? p.images : (p.imageUrl ? [p.imageUrl] : []),
         }),
       )
       .catch((e: Error) => setError(e.message))
@@ -104,7 +105,7 @@ export function AdminProductFormPage() {
       status: form.status,
       category: form.category,
       featured: form.featured,
-      imageUrl: form.imageUrl.trim() || undefined,
+      images: form.images,
     };
     try {
       if (isEdit) {
@@ -199,19 +200,10 @@ export function AdminProductFormPage() {
           </label>
         </div>
 
-        <label className="admin-field">
-          <span className="admin-field-label">Image URL</span>
-          <input
-            className="admin-input"
-            value={form.imageUrl}
-            onChange={(e) => set('imageUrl', e.target.value)}
-            placeholder="https://…"
-          />
-        </label>
-
-        {form.imageUrl.trim() && (
-          <img src={form.imageUrl} alt="" className="admin-form-preview" />
-        )}
+        <div className="admin-field">
+          <span className="admin-field-label">Photos</span>
+          <ImageUploader images={form.images} onChange={(imgs) => set('images', imgs)} />
+        </div>
 
         <label className="admin-checkbox">
           <input type="checkbox" checked={form.featured} onChange={(e) => set('featured', e.target.checked)} />

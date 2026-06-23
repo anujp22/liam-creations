@@ -12,6 +12,7 @@ export interface ProductInput {
   status: ProductStatus;
   featured: boolean;
   imageUrl?: string;
+  images?: string[];
   category: ProductCategory;
 }
 
@@ -132,6 +133,37 @@ export async function listDeletedProducts(page = 0): Promise<ProductPage> {
 
 export function fetchMetrics(): Promise<Metrics> {
   return adminRequest<Metrics>('/api/admin/metrics');
+}
+
+/** Uploads image files (multipart) and returns their public URLs in order. */
+export async function uploadImages(files: File[]): Promise<string[]> {
+  const token = getStoredToken();
+  const form = new FormData();
+  files.forEach((f) => form.append('files', f));
+
+  // Note: do not set Content-Type — the browser adds the multipart boundary.
+  const res = await fetch('/api/admin/uploads', {
+    method: 'POST',
+    headers: token ? { Authorization: `Basic ${token}` } : undefined,
+    body: form,
+  });
+
+  if (res.status === 401) {
+    onUnauthorized?.();
+    throw new AdminAuthError('Your session has expired. Please log in again.');
+  }
+  if (!res.ok) {
+    let message = `Upload failed (${res.status})`;
+    try {
+      const body = await res.json();
+      if (body?.message) message = body.message;
+    } catch {
+      /* non-JSON error body */
+    }
+    throw new Error(message);
+  }
+  const body: { urls: string[] } = await res.json();
+  return body.urls;
 }
 
 export function patchFeatured(productNumber: string, featured: boolean): Promise<Product> {

@@ -12,6 +12,7 @@ export interface Product {
   status: ProductStatus;
   featured: boolean;
   imageUrl?: string;
+  images?: string[];
   category: ProductCategory;
   createdAt?: string;
   updatedAt?: string;
