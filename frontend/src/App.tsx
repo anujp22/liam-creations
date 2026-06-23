@@ -4,6 +4,7 @@ import logo from './assets/logo.png';
 import { ProductGrid } from './components/ProductGrid';
 import { ProductDetailPage } from './pages/ProductDetailPage';
 import { CartPage } from './pages/CartPage';
+import { SalePage } from './pages/SalePage';
 import { RequireAdmin } from './components/RequireAdmin';
 import { AdminLayout } from './pages/admin/AdminLayout';
 import { AdminLoginPage } from './pages/admin/AdminLoginPage';
@@ -46,6 +47,7 @@ function ShopLayout() {
           </span>
         </Link>
         <nav className="catalog-nav">
+          <Link to="/sale" className="nav-sale">Sale</Link>
           <a
             href="https://www.instagram.com/_liamcreations"
             target="_blank"
@@ -97,6 +99,7 @@ function App() {
       <Route element={<ShopLayout />}>
         <Route path="/" element={<ProductGrid />} />
         <Route path="/products/:productNumber" element={<ProductDetailPage />} />
+        <Route path="/sale" element={<SalePage />} />
         <Route path="/cart" element={<CartPage />} />
       </Route>
 

@@ -269,34 +269,34 @@
   color: var(--accent);
 }
 
-/* ── Sale section (homepage) ─────────────────────────────────────────── */
+/* ── Sale page ───────────────────────────────────────────────────────── */
 
-.sale-section {
-  margin-bottom: 32px;
-  padding: 24px;
-  border: 1px solid var(--accent-border);
-  border-radius: 14px;
-  background: linear-gradient(160deg, var(--blush-soft) 0%, var(--bg) 70%);
+.nav-sale {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+  text-decoration: none;
+
+  &:hover { color: var(--accent-dark); text-decoration: underline; }
 }
 
-.sale-section-head {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-  margin-bottom: 18px;
+.sale-page-head {
+  text-align: center;
+  margin-bottom: 28px;
 }
 
-.sale-section-title {
+.sale-page-title {
   font-family: var(--heading);
-  font-size: 30px;
+  font-size: 44px;
   margin: 0;
   color: var(--accent);
 }
 
-.sale-section-sub {
-  font-size: 13px;
+.sale-page-sub {
+  font-size: 14px;
   color: var(--text);
-  letter-spacing: 0.04em;
+  margin-top: 4px;
 }
 
 .product-title {
