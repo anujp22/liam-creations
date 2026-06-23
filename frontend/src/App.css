@@ -851,10 +851,18 @@
 }
 
 .cart-total-amount {
-  font-family: var(--heading);
-  font-size: 30px;
+  font-family: var(--sans);
+  font-size: 26px;
   font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
   color: var(--text-h);
+}
+
+.cart-unit-was {
+  text-decoration: line-through;
+  color: var(--text);
+  margin-right: 6px;
 }
 
 /* ── WhatsApp CTA button ─────────────────────────────────────────────── */
@@ -864,17 +872,30 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
-  padding: 14px 24px;
-  background: #25d366;
+  width: 100%;
+  padding: 15px 24px;
+  border: none;
+  background: #1faa52;
   color: #fff;
-  font-size: 16px;
-  font-weight: 700;
-  border-radius: 8px;
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  border-radius: 12px;
   text-decoration: none;
-  transition: background 0.15s;
+  cursor: pointer;
+  box-shadow: 0 10px 22px -10px rgba(31, 170, 82, 0.55);
+  transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
 
   &:hover {
-    background: #1ebe5d;
+    background: #178f44;
+    transform: translateY(-1px);
+    box-shadow: 0 12px 26px -10px rgba(31, 170, 82, 0.6);
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 6px 16px -10px rgba(31, 170, 82, 0.5);
   }
 }
 

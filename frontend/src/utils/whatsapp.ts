@@ -1,3 +1,4 @@
+import { effectivePrice } from '../api/products';
 import type { CartItem } from '../context/CartContext';
 
 export interface CustomerDetails {
@@ -12,8 +13,9 @@ export function buildWhatsAppUrl(items: CartItem[], total: number, customer: Cus
   const ownerNumber = import.meta.env.VITE_OWNER_WHATSAPP as string;
 
   const lines = items.map(({ product, quantity }) => {
-    const lineTotal = quantity * Number(product.price);
-    return `${quantity}x ${product.title} — ₹${lineTotal.toLocaleString('en-IN')}`;
+    const lineTotal = quantity * effectivePrice(product);
+    const onSale = product.salePrice != null ? ' (sale)' : '';
+    return `${quantity}x ${product.title}${onSale} — ₹${lineTotal.toLocaleString('en-IN')}`;
   });
 
   const customerLines = [

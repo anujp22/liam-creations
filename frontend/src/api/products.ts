@@ -18,6 +18,11 @@ export interface Product {
   updatedAt?: string;
 }
 
+/** The price a customer actually pays: sale price when set, otherwise the regular price. */
+export function effectivePrice(p: Pick<Product, 'price' | 'salePrice'>): number {
+  return p.salePrice != null ? Number(p.salePrice) : Number(p.price);
+}
+
 interface PagedResponse<T> {
   content: T[];
   page: {

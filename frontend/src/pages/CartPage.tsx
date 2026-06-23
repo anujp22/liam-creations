@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
+import { effectivePrice } from '../api/products';
 import { buildWhatsAppUrl, type CustomerDetails } from '../utils/whatsapp';
 import { useTitle } from '../hooks/useTitle';
 
@@ -69,7 +70,8 @@ export function CartPage() {
 
       <div className="cart-items">
         {items.map(({ product, quantity }) => {
-          const lineTotal = quantity * Number(product.price);
+          const unitPrice = effectivePrice(product);
+          const lineTotal = quantity * unitPrice;
           return (
             <div key={product.productNumber} className="cart-item">
               <div className="cart-item-info">
@@ -78,7 +80,12 @@ export function CartPage() {
                 )}
                 <div className="cart-item-text">
                   <p className="cart-item-title">{product.title}</p>
-                  <p className="cart-item-unit">₹{Number(product.price).toLocaleString('en-IN')} each</p>
+                  <p className="cart-item-unit">
+                    {product.salePrice != null && (
+                      <span className="cart-unit-was">₹{Number(product.price).toLocaleString('en-IN')}</span>
+                    )}
+                    ₹{unitPrice.toLocaleString('en-IN')} each
+                  </p>
                 </div>
               </div>
 
