@@ -1,5 +1,18 @@
 .catalog {
-  padding: 0 24px 32px;
+  width: 100%;
+  max-width: 1126px;
+  margin: 0 auto;
+  padding: 0 24px;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+/* main grows so the footer always sits flush at the bottom (no white strip) */
+.catalog > main {
+  flex: 1;
+  padding-bottom: 32px;
 }
 
 .catalog-header {
@@ -781,10 +794,10 @@
 /* ── Footer ──────────────────────────────────────────────────────────── */
 
 .catalog-footer {
-  margin: 56px -24px 0;
-  padding: 40px 24px 36px;
+  margin: 0 -24px;
+  padding: 40px 24px 44px;
   border-top: 1px solid var(--border);
-  background: linear-gradient(180deg, var(--bg) 0%, var(--blush-soft) 100%);
+  background: linear-gradient(180deg, var(--bg) 0%, var(--blush) 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
