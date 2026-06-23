@@ -32,6 +32,7 @@ export function AdminOnSale() {
         status: p.status,
         featured: p.featured,
         imageUrl: p.imageUrl,
+        images: p.images ?? [],
         category: p.category,
       });
       setProducts((prev) => prev.filter((x) => x.productNumber !== p.productNumber));
