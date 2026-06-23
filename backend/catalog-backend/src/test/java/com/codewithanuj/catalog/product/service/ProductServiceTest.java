@@ -28,6 +28,8 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -170,6 +172,20 @@ class ProductServiceTest {
     }
 
     @Test
+    void permanentlyDeleteProductDeletesEachImageUrlOnlyOnce() {
+        // The primary imageUrl is also the first gallery entry — it must not be deleted twice.
+        Product existing = product("PRD-001", ProductStatus.IN_STOCK);
+        existing.setImageUrl("/uploads/a.jpg");
+        existing.setImages(new java.util.ArrayList<>(List.of("/uploads/a.jpg", "/uploads/b.jpg")));
+        when(productRepository.findById("PRD-001")).thenReturn(Optional.of(existing));
+
+        productService.permanentlyDeleteProduct("PRD-001");
+
+        verify(storageService, times(1)).delete("/uploads/a.jpg");
+        verify(storageService, times(1)).delete("/uploads/b.jpg");
+    }
+
+    @Test
     void getDeletedProductsReturnsSoftDeletedRows() {
         Pageable pageable = PageRequest.of(0, 20);
         Product deleted = product("PRD-001", ProductStatus.IN_STOCK);
@@ -197,6 +213,51 @@ class ProductServiceTest {
         ProductResponseDto result = productService.createProduct(request);
 
         assertThat(result.productNumber()).isEqualTo("PRD-010");
+    }
+
+    @Test
+    void createProductRejectsSalePriceNotBelowPrice() {
+        ProductCreateRequest request = new ProductCreateRequest(
+                "Banarasi Silk Saree", "Hand-woven pure silk",
+                new BigDecimal("8500.00"), "INR", ProductStatus.IN_STOCK, true, null,
+                ProductCategory.BRIDAL_SAREES, new BigDecimal("8500.00"), null
+        );
+
+        assertThatThrownBy(() -> productService.createProduct(request))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("salePrice must be greater than 0 and less than price");
+        verify(productRepository, never()).save(any());
+    }
+
+    @Test
+    void createProductRejectsNonPositiveSalePrice() {
+        ProductCreateRequest request = new ProductCreateRequest(
+                "Banarasi Silk Saree", "Hand-woven pure silk",
+                new BigDecimal("8500.00"), "INR", ProductStatus.IN_STOCK, true, null,
+                ProductCategory.BRIDAL_SAREES, BigDecimal.ZERO, null
+        );
+
+        assertThatThrownBy(() -> productService.createProduct(request))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("salePrice must be greater than 0 and less than price");
+        verify(productRepository, never()).save(any());
+    }
+
+    @Test
+    void updateProductRejectsSalePriceNotBelowPrice() {
+        ProductUpdateRequest request = new ProductUpdateRequest(
+                "Updated Saree", "Updated desc",
+                new BigDecimal("9500.00"), "INR", ProductStatus.OUT_OF_STOCK, false, null,
+                ProductCategory.BRIDAL_SAREES, new BigDecimal("10000.00"), null
+        );
+
+        when(productRepository.findById("PRD-001"))
+                .thenReturn(Optional.of(product("PRD-001", ProductStatus.IN_STOCK)));
+
+        assertThatThrownBy(() -> productService.updateProduct("PRD-001", request))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("salePrice must be greater than 0 and less than price");
+        verify(productRepository, never()).save(any());
     }
 
     @Test
