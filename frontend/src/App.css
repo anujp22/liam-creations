@@ -1174,15 +1174,55 @@
 
 /* ── Login ───────────────────────────────────────────────────────────── */
 
+.admin-viewbar {
+  margin: 0 -24px;
+  padding: 9px 24px;
+  background: var(--accent-dark);
+  color: #fff;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.admin-viewbar-link {
+  color: #fff;
+  font-weight: 600;
+  text-decoration: underline;
+  white-space: nowrap;
+}
+
 .admin-login {
   flex: 1;
   min-height: 100svh;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 24px;
   padding: 24px;
   background: linear-gradient(160deg, var(--blush) 0%, var(--blush-soft) 100%);
   box-sizing: border-box;
+}
+
+.admin-login-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.admin-login-footer-name { font-family: var(--script); font-size: 24px; color: var(--text-h); }
+
+.admin-login-footer-sub {
+  font-family: var(--heading);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--accent);
 }
 
 .admin-login-card {

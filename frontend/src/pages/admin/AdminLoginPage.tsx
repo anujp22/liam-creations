@@ -63,6 +63,11 @@ export function AdminLoginPage() {
           {submitting ? 'Signing in…' : 'Sign in'}
         </button>
       </form>
+
+      <footer className="admin-login-footer">
+        <span className="admin-login-footer-name">Liams Creations</span>
+        <span className="admin-login-footer-sub">Marriage Essentials</span>
+      </footer>
     </div>
   );
 }

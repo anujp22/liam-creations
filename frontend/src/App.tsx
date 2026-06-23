@@ -13,6 +13,7 @@ import { AdminInventory } from './pages/admin/AdminInventory';
 import { AdminDeleted } from './pages/admin/AdminDeleted';
 import { AdminProductFormPage } from './pages/admin/AdminProductFormPage';
 import { useCart } from './context/CartContext';
+import { useAdminAuth } from './context/AdminAuthContext';
 
 function CartIcon() {
   const { itemCount } = useCart();
@@ -27,8 +28,15 @@ function CartIcon() {
 }
 
 function ShopLayout() {
+  const { isAuthenticated } = useAdminAuth();
   return (
     <div className="catalog">
+      {isAuthenticated && (
+        <div className="admin-viewbar">
+          <span>You're viewing the store as admin.</span>
+          <Link to="/admin" className="admin-viewbar-link">Back to admin →</Link>
+        </div>
+      )}
       <header className="catalog-header">
         <Link to="/" className="brand-lockup" aria-label="Liams Creations — Marriage Essentials, home">
           <img src={logo} alt="" className="brand-logo" />
