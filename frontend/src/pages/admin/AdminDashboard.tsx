@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Product, ProductStatus } from '../../api/products';
 import { deleteProduct, patchFeatured, patchStatus } from '../../api/admin';
-import { useProducts } from '../../hooks/useProducts';
+import { invalidateProductData, useProducts } from '../../hooks/useProducts';
 import { formatINR } from '../../utils/money';
 import { useTitle } from '../../hooks/useTitle';
 
@@ -36,7 +36,7 @@ export function AdminDashboard() {
   const products = data?.products ?? [];
   const totalPages = data?.totalPages ?? 0;
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['products'] });
+  const invalidate = () => invalidateProductData(queryClient);
 
   const statusMutation = useMutation({
     mutationFn: ({ productNumber, status }: { productNumber: string; status: ProductStatus }) =>

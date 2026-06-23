@@ -5,6 +5,7 @@ import { fetchProduct } from '../../api/products';
 import type { ProductCategory, ProductStatus } from '../../api/products';
 import { createProduct, updateProduct } from '../../api/admin';
 import { ImageUploader } from '../../components/ImageUploader';
+import { invalidateProductData } from '../../hooks/useProducts';
 import { useTitle } from '../../hooks/useTitle';
 
 const STATUS_OPTIONS: { value: ProductStatus; label: string }[] = [
@@ -116,9 +117,8 @@ export function AdminProductFormPage() {
       } else {
         await createProduct(payload);
       }
-      // Refresh any cached lists/metrics so the change shows immediately.
-      queryClient.invalidateQueries({ queryKey: ['products'] });
-      queryClient.invalidateQueries({ queryKey: ['metrics'] });
+      // Refresh any cached lists/metrics/deleted view so the change shows immediately.
+      invalidateProductData(queryClient);
       navigate('/admin', { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Save failed.');

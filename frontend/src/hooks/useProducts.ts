@@ -1,4 +1,4 @@
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery, type QueryClient } from '@tanstack/react-query';
 import {
   fetchProduct,
   fetchProducts,
@@ -47,4 +47,16 @@ export function useDeletedProducts(page = 0) {
 /** Admin inventory metrics. */
 export function useMetrics() {
   return useQuery({ queryKey: ['metrics'], queryFn: fetchMetrics });
+}
+
+/**
+ * Invalidate every cache a product mutation can affect: the active lists, the
+ * inventory metrics, and the deleted tab. Any admin write (create/update/delete/
+ * restore/status/featured/remove-sale) crosses at least one of these, so all
+ * admin mutations use this to keep the whole UI consistent.
+ */
+export function invalidateProductData(queryClient: QueryClient) {
+  queryClient.invalidateQueries({ queryKey: ['products'] });
+  queryClient.invalidateQueries({ queryKey: ['metrics'] });
+  queryClient.invalidateQueries({ queryKey: ['deleted-products'] });
 }

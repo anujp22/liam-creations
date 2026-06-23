@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Product } from '../../api/products';
 import { hardDeleteProduct, restoreProduct } from '../../api/admin';
-import { useDeletedProducts } from '../../hooks/useProducts';
+import { invalidateProductData, useDeletedProducts } from '../../hooks/useProducts';
 import { useTitle } from '../../hooks/useTitle';
 
 export function AdminDeleted() {
@@ -16,7 +16,7 @@ export function AdminDeleted() {
   const products = data?.products ?? [];
   const totalPages = data?.totalPages ?? 0;
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['deleted-products'] });
+  const invalidate = () => invalidateProductData(queryClient);
 
   const restoreMutation = useMutation({ mutationFn: restoreProduct, onSuccess: invalidate });
   const purgeMutation = useMutation({ mutationFn: hardDeleteProduct, onSuccess: invalidate });

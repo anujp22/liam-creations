@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Product } from '../../api/products';
 import { updateProduct } from '../../api/admin';
 import { formatINR } from '../../utils/money';
-import { useProducts } from '../../hooks/useProducts';
+import { invalidateProductData, useProducts } from '../../hooks/useProducts';
 import { useTitle } from '../../hooks/useTitle';
 
 export function AdminOnSale() {
@@ -30,7 +30,7 @@ export function AdminOnSale() {
         images: p.images ?? [],
         category: p.category,
       }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['products'] }),
+    onSuccess: () => invalidateProductData(queryClient),
   });
 
   const removeSale = async (p: Product) => {
