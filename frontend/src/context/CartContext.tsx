@@ -62,9 +62,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const removeFromCart = (productNumber: string) => {
     setCart(prev => {
-      const { [productNumber]: _, ...rest } = prev;
-      saveCart(rest);
-      return rest;
+      const next = { ...prev };
+      delete next[productNumber];
+      saveCart(next);
+      return next;
     });
   };
 
@@ -94,6 +95,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// Hook colocated with its provider by design; the fast-refresh rule only cares
+// about mixed exports, which is harmless here.
+// eslint-disable-next-line react-refresh/only-export-components
 export function useCart() {
   const ctx = useContext(CartContext);
   if (!ctx) throw new Error('useCart must be used within CartProvider');

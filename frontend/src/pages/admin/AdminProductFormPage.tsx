@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { fetchProduct } from '../../api/products';
 import type { ProductCategory, ProductStatus } from '../../api/products';
 import { createProduct, updateProduct } from '../../api/admin';
@@ -45,6 +46,7 @@ export function AdminProductFormPage() {
   const { productNumber } = useParams<{ productNumber: string }>();
   const isEdit = Boolean(productNumber);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   useTitle(isEdit ? 'Edit Product' : 'New Product');
 
   const [form, setForm] = useState<FormState>(EMPTY);
@@ -110,9 +112,13 @@ export function AdminProductFormPage() {
     try {
       if (isEdit) {
         await updateProduct(productNumber!, payload);
+        queryClient.invalidateQueries({ queryKey: ['product', productNumber] });
       } else {
         await createProduct(payload);
       }
+      // Refresh any cached lists/metrics so the change shows immediately.
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['metrics'] });
       navigate('/admin', { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Save failed.');
