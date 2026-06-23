@@ -315,12 +315,13 @@
 
 .sale-page-head {
   text-align: center;
-  margin-bottom: 28px;
+  margin-bottom: 40px;
 }
 
 .sale-page-title {
   font-family: var(--heading);
   font-size: 44px;
+  line-height: 1.1;
   margin: 0;
   color: var(--accent);
 }
@@ -328,7 +329,7 @@
 .sale-page-sub {
   font-size: 14px;
   color: var(--text);
-  margin-top: 4px;
+  margin-top: 10px;
 }
 
 .product-title {
@@ -1309,8 +1310,14 @@
 .admin-dash-title {
   font-family: var(--heading);
   font-size: 36px;
-  margin: 0;
+  margin: 0 0 24px;
   color: var(--text-h);
+}
+
+/* In the products/summary header the title sits inline with the action button,
+   so the header's own margin handles the gap. */
+.admin-dash-head .admin-dash-title {
+  margin: 0;
 }
 
 .admin-primary-btn {
