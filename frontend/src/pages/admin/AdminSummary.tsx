@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { fetchProducts } from '../../api/products';
 import type { Product } from '../../api/products';
 import { fetchMetrics, type Metrics } from '../../api/admin';
+import { formatINR } from '../../utils/money';
 import { useTitle } from '../../hooks/useTitle';
 
 export function AdminSummary() {
@@ -62,7 +63,7 @@ export function AdminSummary() {
                   : <span className="admin-thumb admin-thumb--empty" />}
                 <span className="admin-recent-name">{p.title}</span>
                 <span className="admin-recent-num">{p.productNumber}</span>
-                <span className="admin-recent-price">₹{Number(p.salePrice ?? p.price).toLocaleString('en-IN')}</span>
+                <span className="admin-recent-price">{formatINR(Number(p.salePrice ?? p.price))}</span>
               </Link>
             ))}
           </div>

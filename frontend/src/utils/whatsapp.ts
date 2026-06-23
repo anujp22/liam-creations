@@ -1,4 +1,5 @@
 import { effectivePrice } from '../api/products';
+import { formatINR } from './money';
 import type { CartItem } from '../context/CartContext';
 
 export interface CustomerDetails {
@@ -10,12 +11,15 @@ export interface CustomerDetails {
 }
 
 export function buildWhatsAppUrl(items: CartItem[], total: number, customer: CustomerDetails): string {
-  const ownerNumber = import.meta.env.VITE_OWNER_WHATSAPP as string;
+  const ownerNumber = (import.meta.env.VITE_OWNER_WHATSAPP as string | undefined)?.trim();
+  if (!ownerNumber) {
+    throw new Error('WhatsApp ordering is not configured. Please set VITE_OWNER_WHATSAPP.');
+  }
 
   const lines = items.map(({ product, quantity }) => {
     const lineTotal = quantity * effectivePrice(product);
     const onSale = product.salePrice != null ? ' (sale)' : '';
-    return `${quantity}x ${product.title}${onSale} — ₹${lineTotal.toLocaleString('en-IN')}`;
+    return `${quantity}x ${product.title}${onSale} — ${formatINR(lineTotal)}`;
   });
 
   const customerLines = [
@@ -37,7 +41,7 @@ export function buildWhatsAppUrl(items: CartItem[], total: number, customer: Cus
     '─────────────────────',
     ...lines,
     '─────────────────────',
-    `*Total: ₹${total.toLocaleString('en-IN')}*`,
+    `*Total: ${formatINR(total)}*`,
     '',
     'Please confirm availability and share payment details. Thank you!',
   ].join('\n');

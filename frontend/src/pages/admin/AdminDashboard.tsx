@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { fetchProducts } from '../../api/products';
 import type { Product, ProductStatus } from '../../api/products';
 import { deleteProduct, patchFeatured, patchStatus } from '../../api/admin';
+import { formatINR } from '../../utils/money';
 import { useTitle } from '../../hooks/useTitle';
 
 const STATUS_OPTIONS: { value: ProductStatus; label: string }[] = [
@@ -129,11 +130,11 @@ export function AdminDashboard() {
               <span>
                 {p.salePrice != null ? (
                   <span className="admin-price-sale">
-                    <span className="admin-price-was">₹{Number(p.price).toLocaleString('en-IN')}</span>
-                    <span className="admin-price-now">₹{Number(p.salePrice).toLocaleString('en-IN')}</span>
+                    <span className="admin-price-was">{formatINR(Number(p.price))}</span>
+                    <span className="admin-price-now">{formatINR(Number(p.salePrice))}</span>
                   </span>
                 ) : (
-                  <>₹{Number(p.price).toLocaleString('en-IN')}</>
+                  <>{formatINR(Number(p.price))}</>
                 )}
               </span>
               <span>

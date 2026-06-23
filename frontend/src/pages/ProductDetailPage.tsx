@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { fetchProduct } from '../api/products';
 import type { Product } from '../api/products';
 import { useCart } from '../context/CartContext';
+import { formatINR } from '../utils/money';
 import { useTitle } from '../hooks/useTitle';
 
 export function ProductDetailPage() {
@@ -66,11 +67,11 @@ export function ProductDetailPage() {
         <div className="detail-footer">
           {product.salePrice != null ? (
             <span className="product-price">
-              <span className="product-price-was">₹{Number(product.price).toLocaleString('en-IN')}</span>
-              <span className="product-price-now">₹{Number(product.salePrice).toLocaleString('en-IN')}</span>
+              <span className="product-price-was">{formatINR(Number(product.price))}</span>
+              <span className="product-price-now">{formatINR(Number(product.salePrice))}</span>
             </span>
           ) : (
-            <span className="product-price">₹{Number(product.price).toLocaleString('en-IN')}</span>
+            <span className="product-price">{formatINR(Number(product.price))}</span>
           )}
           <button
             className={`add-to-cart-btn${inCart ? ' add-to-cart-btn--in-cart' : ''}`}

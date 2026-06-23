@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, type ReactNode } from 'react';
 import { effectivePrice } from '../api/products';
+import { roundMoney } from '../utils/money';
 import type { Product } from '../api/products';
 
 export interface CartItem {
@@ -83,7 +84,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const items = Object.values(cart);
   const itemCount = items.reduce((sum, i) => sum + i.quantity, 0);
-  const total = items.reduce((sum, i) => sum + i.quantity * effectivePrice(i.product), 0);
+  const total = roundMoney(items.reduce((sum, i) => sum + i.quantity * effectivePrice(i.product), 0));
   const isInCart = (productNumber: string) => productNumber in cart;
 
   return (

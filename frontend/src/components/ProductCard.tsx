@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import type { Product } from '../api/products';
 import { useCart } from '../context/CartContext';
+import { formatINR } from '../utils/money';
 
 interface Props {
   product: Product;
@@ -25,11 +26,11 @@ export function ProductCard({ product }: Props) {
         <div className="product-footer">
           {product.salePrice != null ? (
             <span className="product-price">
-              <span className="product-price-was">₹{Number(product.price).toLocaleString('en-IN')}</span>
-              <span className="product-price-now">₹{Number(product.salePrice).toLocaleString('en-IN')}</span>
+              <span className="product-price-was">{formatINR(Number(product.price))}</span>
+              <span className="product-price-now">{formatINR(Number(product.salePrice))}</span>
             </span>
           ) : (
-            <span className="product-price">₹{Number(product.price).toLocaleString('en-IN')}</span>
+            <span className="product-price">{formatINR(Number(product.price))}</span>
           )}
           {product.featured && <span className="product-featured">Featured</span>}
         </div>

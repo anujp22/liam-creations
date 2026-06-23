@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { fetchProducts } from '../../api/products';
 import type { Product } from '../../api/products';
 import { updateProduct } from '../../api/admin';
+import { formatINR } from '../../utils/money';
 import { useTitle } from '../../hooks/useTitle';
 
 export function AdminOnSale() {
@@ -67,8 +68,8 @@ export function AdminOnSale() {
                 </span>
               </span>
               <span className="admin-price-sale">
-                <span className="admin-price-was">₹{Number(p.price).toLocaleString('en-IN')}</span>
-                <span className="admin-price-now">₹{Number(p.salePrice).toLocaleString('en-IN')}</span>
+                <span className="admin-price-was">{formatINR(Number(p.price))}</span>
+                <span className="admin-price-now">{formatINR(Number(p.salePrice))}</span>
               </span>
               <span className="admin-cell-actions">
                 <Link to={`/admin/products/${p.productNumber}/edit`} className="admin-link-btn">Edit</Link>
