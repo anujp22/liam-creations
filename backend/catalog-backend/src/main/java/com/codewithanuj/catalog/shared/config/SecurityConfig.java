@@ -62,8 +62,12 @@ public class SecurityConfig {
             protected boolean shouldNotFilter(jakarta.servlet.http.HttpServletRequest request) {
                 String path = request.getRequestURI();
                 boolean isGet = "GET".equals(request.getMethod());
+                boolean isReviewSubmit = "POST".equals(request.getMethod())
+                        && path.startsWith("/api/products/") && path.endsWith("/reviews");
                 return (isGet && path.startsWith("/api/products"))
+                        || (isGet && path.startsWith("/api/reviews"))
                         || (isGet && path.startsWith("/uploads/"))
+                        || isReviewSubmit
                         || path.equals("/actuator/health");
             }
         };
@@ -75,12 +79,14 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/products", "/api/products/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/products/*/reviews").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/reviews/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().denyAll()
                 )
                 .addFilterAt(basicFilter, BasicAuthenticationFilter.class)
-                .addFilterBefore(new AdminRateLimitFilter(), BasicAuthenticationFilter.class)
+                .addFilterBefore(new ApiRateLimitFilter(), BasicAuthenticationFilter.class)
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(entryPoint));
 
         return http.build();

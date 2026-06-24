@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.UUID;
 
 public interface ReviewRepository extends JpaRepository<Review, UUID> {
@@ -30,6 +32,21 @@ public interface ReviewRepository extends JpaRepository<Review, UUID> {
 
     /** Projection for {@link #aggregateRating}. */
     interface RatingAggregate {
+        Double getAverage();
+        long getCount();
+    }
+
+    // Batch aggregate for a set of products (approved only). Products with no
+    // approved reviews are simply absent from the result.
+    @Query("SELECT r.productNumber AS productNumber, AVG(r.rating) AS average, COUNT(r) AS count " +
+           "FROM Review r WHERE r.status = :status AND r.productNumber IN :productNumbers " +
+           "GROUP BY r.productNumber")
+    List<ProductRatingAggregate> aggregateRatings(@Param("status") ReviewStatus status,
+                                                  @Param("productNumbers") Collection<String> productNumbers);
+
+    /** Projection for {@link #aggregateRatings}. */
+    interface ProductRatingAggregate {
+        String getProductNumber();
         Double getAverage();
         long getCount();
     }

@@ -14,6 +14,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -77,6 +80,24 @@ public class ReviewService {
         ReviewRepository.RatingAggregate agg =
                 reviewRepository.aggregateRating(productNumber, ReviewStatus.APPROVED);
         return new RatingSummary(agg.getAverage(), agg.getCount());
+    }
+
+    /**
+     * Approved-only rating summaries for several products in one query. Products
+     * without approved reviews are omitted from the map (the storefront treats a
+     * missing entry as "no rating yet").
+     */
+    @Transactional(readOnly = true)
+    public Map<String, RatingSummary> getRatingSummaries(Collection<String> productNumbers) {
+        Map<String, RatingSummary> summaries = new LinkedHashMap<>();
+        if (productNumbers == null || productNumbers.isEmpty()) {
+            return summaries;
+        }
+        for (ReviewRepository.ProductRatingAggregate agg :
+                reviewRepository.aggregateRatings(ReviewStatus.APPROVED, productNumbers)) {
+            summaries.put(agg.getProductNumber(), new RatingSummary(agg.getAverage(), agg.getCount()));
+        }
+        return summaries;
     }
 
     /** Count of reviews awaiting moderation (for the admin badge). */

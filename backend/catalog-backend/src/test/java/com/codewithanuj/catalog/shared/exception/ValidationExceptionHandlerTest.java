@@ -38,6 +38,10 @@ class ValidationExceptionHandlerTest {
     @MockBean
     private com.codewithanuj.catalog.shared.storage.StorageService storageService;
 
+    // Review controllers are picked up by the broad @WebMvcTest scan too
+    @MockBean
+    private com.codewithanuj.catalog.review.service.ReviewService reviewService;
+
     // Registers TestController as a bean so Spring MVC can discover its @PostMapping
     @TestConfiguration
     static class TestConfig {
