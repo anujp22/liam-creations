@@ -21,9 +21,16 @@ public interface ReviewRepository extends JpaRepository<Review, UUID> {
 
     long countByStatus(ReviewStatus status);
 
-    // Aggregate rating for a single product (approved only). Returns [avg, count].
-    @Query("SELECT AVG(r.rating), COUNT(r) FROM Review r " +
+    // Aggregate rating for a single product (approved only). average is null when
+    // the product has no approved reviews.
+    @Query("SELECT AVG(r.rating) AS average, COUNT(r) AS count FROM Review r " +
            "WHERE r.productNumber = :productNumber AND r.status = :status")
-    Object[] aggregateRating(@Param("productNumber") String productNumber,
-                             @Param("status") ReviewStatus status);
+    RatingAggregate aggregateRating(@Param("productNumber") String productNumber,
+                                    @Param("status") ReviewStatus status);
+
+    /** Projection for {@link #aggregateRating}. */
+    interface RatingAggregate {
+        Double getAverage();
+        long getCount();
+    }
 }
