@@ -5,6 +5,7 @@ import { formatINR } from '../utils/money';
 import { useProduct } from '../hooks/useProducts';
 import { useTitle } from '../hooks/useTitle';
 import { ReviewForm } from '../components/ReviewForm';
+import { ReviewList } from '../components/ReviewList';
 
 export function ProductDetailPage() {
   const { productNumber } = useParams<{ productNumber: string }>();
@@ -83,6 +84,7 @@ export function ProductDetailPage() {
       </div>
 
       <section className="detail-reviews">
+        <ReviewList productNumber={product.productNumber} />
         <ReviewForm productNumber={product.productNumber} />
       </section>
     </div>

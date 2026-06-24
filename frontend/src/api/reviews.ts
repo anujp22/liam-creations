@@ -14,6 +14,31 @@ export interface ReviewInput {
   comment: string;
 }
 
+interface PagedResponse<T> {
+  content: T[];
+  page: { totalElements: number; totalPages: number; number: number; size: number };
+}
+
+export interface ReviewPage {
+  reviews: Review[];
+  totalPages: number;
+  currentPage: number;
+  totalElements: number;
+}
+
+/** Approved reviews for a product, newest first. */
+export async function fetchReviews(productNumber: string, page = 0): Promise<ReviewPage> {
+  const res = await fetch(`/api/products/${productNumber}/reviews?page=${page}`);
+  if (!res.ok) throw new Error(`Failed to load reviews (${res.status})`);
+  const data: PagedResponse<Review> = await res.json();
+  return {
+    reviews: data.content,
+    totalPages: data.page.totalPages,
+    currentPage: data.page.number,
+    totalElements: data.page.totalElements,
+  };
+}
+
 /** Submits a review for a product. It is stored as PENDING until an admin approves it. */
 export async function submitReview(productNumber: string, input: ReviewInput): Promise<Review> {
   const res = await fetch(`/api/products/${productNumber}/reviews`, {

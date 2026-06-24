@@ -1837,3 +1837,25 @@
 }
 .review-submit:disabled { opacity: 0.6; cursor: default; }
 .review-thanks { margin: 0; color: var(--success); font-weight: 500; }
+
+/* ── Reviews: approved list ───────────────────────────────────────────────── */
+.review-list { margin-bottom: 26px; }
+.review-list-title { margin: 0 0 14px; font-size: 17px; color: var(--text-h); }
+.review-empty {
+  margin: 0 0 20px;
+  color: var(--text);
+  font-size: 14px;
+}
+.review-item {
+  padding: 14px 0;
+  border-top: 1px solid var(--border);
+}
+.review-item-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+.review-item-date { font-size: 12px; color: var(--text); }
+.review-item-comment { margin: 0; color: var(--text); line-height: 1.55; }
