@@ -127,19 +127,6 @@ class ReviewServiceTest {
     }
 
     @Test
-    void getRatingSummaryReturnsAverageAndCount() {
-        ReviewRepository.RatingAggregate agg = mock(ReviewRepository.RatingAggregate.class);
-        when(agg.getAverage()).thenReturn(4.5);
-        when(agg.getCount()).thenReturn(2L);
-        when(reviewRepository.aggregateRating("PRD-001", ReviewStatus.APPROVED)).thenReturn(agg);
-
-        RatingSummary summary = reviewService.getRatingSummary("PRD-001");
-
-        assertThat(summary.average()).isEqualTo(4.5);
-        assertThat(summary.count()).isEqualTo(2);
-    }
-
-    @Test
     void getRatingSummariesBuildsMapAndSkipsUnratedProducts() {
         ReviewRepository.ProductRatingAggregate agg = mock(ReviewRepository.ProductRatingAggregate.class);
         when(agg.getProductNumber()).thenReturn("PRD-001");

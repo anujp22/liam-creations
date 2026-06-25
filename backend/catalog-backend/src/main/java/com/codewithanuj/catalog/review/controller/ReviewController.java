@@ -45,9 +45,16 @@ public class ReviewController {
         return reviewService.getApprovedReviews(productNumber, pageable);
     }
 
+    // A grid page asks for at most ~20 products; cap well above that so an
+    // unauthenticated caller can't force a huge IN (...) query.
+    private static final int MAX_SUMMARY_PRODUCTS = 100;
+
     /** Approved-only rating summaries for the given products (e.g. a grid page). */
     @GetMapping("/api/reviews/summary")
     public Map<String, RatingSummary> getRatingSummaries(@RequestParam List<String> productNumbers) {
-        return reviewService.getRatingSummaries(productNumbers);
+        List<String> capped = productNumbers.size() > MAX_SUMMARY_PRODUCTS
+                ? productNumbers.subList(0, MAX_SUMMARY_PRODUCTS)
+                : productNumbers;
+        return reviewService.getRatingSummaries(capped);
     }
 }

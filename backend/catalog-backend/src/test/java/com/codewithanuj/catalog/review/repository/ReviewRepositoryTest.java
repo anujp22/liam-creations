@@ -73,18 +73,6 @@ class ReviewRepositoryTest {
     }
 
     @Test
-    void aggregateRatingAveragesApprovedOnly() {
-        saveReview("PRD-001", 4, ReviewStatus.APPROVED);
-        saveReview("PRD-001", 5, ReviewStatus.APPROVED);
-        saveReview("PRD-001", 1, ReviewStatus.PENDING); // excluded
-
-        var agg = reviewRepository.aggregateRating("PRD-001", ReviewStatus.APPROVED);
-
-        assertThat(agg.getAverage()).isEqualTo(4.5);
-        assertThat(agg.getCount()).isEqualTo(2);
-    }
-
-    @Test
     void aggregateRatingsBatchesApprovedAndOmitsUnratedProducts() {
         saveReview("PRD-001", 4, ReviewStatus.APPROVED);
         saveReview("PRD-001", 5, ReviewStatus.APPROVED);
@@ -97,5 +85,9 @@ class ReviewRepositoryTest {
         assertThat(rows).hasSize(2);
         assertThat(rows).extracting(ReviewRepository.ProductRatingAggregate::getProductNumber)
                 .containsExactlyInAnyOrder("PRD-001", "PRD-002");
+
+        var prd001 = rows.stream().filter(r -> r.getProductNumber().equals("PRD-001")).findFirst().orElseThrow();
+        assertThat(prd001.getAverage()).isEqualTo(4.5); // (4 + 5) / 2, approved only
+        assertThat(prd001.getCount()).isEqualTo(2);
     }
 }

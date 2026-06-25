@@ -74,14 +74,6 @@ public class ReviewService {
         reviewRepository.deleteById(id);
     }
 
-    /** Approved-only average + count for a product. */
-    @Transactional(readOnly = true)
-    public RatingSummary getRatingSummary(String productNumber) {
-        ReviewRepository.RatingAggregate agg =
-                reviewRepository.aggregateRating(productNumber, ReviewStatus.APPROVED);
-        return new RatingSummary(agg.getAverage(), agg.getCount());
-    }
-
     /**
      * Approved-only rating summaries for several products in one query. Products
      * without approved reviews are omitted from the map (the storefront treats a
