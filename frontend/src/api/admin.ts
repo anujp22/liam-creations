@@ -1,4 +1,5 @@
 import type { Product, ProductCategory, ProductPage, ProductStatus } from './products';
+import type { Review, ReviewStatus } from './reviews';
 
 const TOKEN_KEY = 'lc-admin-auth';
 
@@ -138,6 +139,46 @@ export async function listDeletedProducts(page = 0): Promise<ProductPage> {
 
 export function fetchMetrics(): Promise<Metrics> {
   return adminRequest<Metrics>('/api/admin/metrics');
+}
+
+// ── review moderation ─────────────────────────────────────────────────────────
+
+interface ReviewPagedResponse {
+  content: Review[];
+  page: { totalElements: number; totalPages: number; number: number; size: number };
+}
+
+export interface AdminReviewPage {
+  reviews: Review[];
+  totalPages: number;
+  currentPage: number;
+  totalElements: number;
+}
+
+export async function listReviews(status: ReviewStatus, page = 0): Promise<AdminReviewPage> {
+  const data = await adminRequest<ReviewPagedResponse>(`/api/admin/reviews?status=${status}&page=${page}`);
+  return {
+    reviews: data.content,
+    totalPages: data.page.totalPages,
+    currentPage: data.page.number,
+    totalElements: data.page.totalElements,
+  };
+}
+
+export function setReviewStatus(id: string, status: ReviewStatus): Promise<Review> {
+  return adminRequest<Review>(`/api/admin/reviews/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status }),
+  });
+}
+
+export function deleteReview(id: string): Promise<void> {
+  return adminRequest<void>(`/api/admin/reviews/${id}`, { method: 'DELETE' });
+}
+
+export async function fetchPendingReviewCount(): Promise<number> {
+  const data = await adminRequest<{ count: number }>('/api/admin/reviews/pending-count');
+  return data.count;
 }
 
 /** Uploads image files (multipart) and returns their public URLs in order. */
