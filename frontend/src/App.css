@@ -1782,3 +1782,174 @@
 @media (max-width: 560px) {
   .admin-form-grid { grid-template-columns: 1fr; }
 }
+
+/* ── Reviews: star rating + write-a-review form ───────────────────────────── */
+.stars { display: inline-flex; line-height: 1; }
+.star { color: var(--border); }
+.star--on { color: var(--accent); }
+.stars--input .star--btn {
+  background: none;
+  border: none;
+  padding: 0 2px;
+  cursor: pointer;
+  color: var(--border);
+  transition: color 0.12s ease, transform 0.12s ease;
+}
+.stars--input .star--btn:hover { transform: scale(1.1); }
+.stars--input .star--btn.star--on { color: var(--accent); }
+
+.detail-reviews {
+  max-width: 720px;
+  margin: 28px auto 0;
+}
+
+.review-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 22px 24px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fff;
+}
+.review-form-title { margin: 0; font-size: 17px; color: var(--text-h); }
+.review-field { display: flex; flex-direction: column; gap: 6px; }
+.review-label { font-size: 13px; font-weight: 600; color: var(--text-h); }
+.review-textarea {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font: inherit;
+  color: var(--text);
+  resize: vertical;
+}
+.review-textarea:focus { outline: none; border-color: var(--accent-border); }
+.review-error { color: var(--danger); font-size: 13px; margin: 0; }
+.review-submit {
+  align-self: flex-start;
+  padding: 11px 24px;
+  border: none;
+  border-radius: 8px;
+  background: var(--accent-dark);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+.review-submit:disabled { opacity: 0.6; cursor: default; }
+.review-thanks { margin: 0; color: var(--success); font-weight: 500; }
+
+/* ── Reviews: approved list ───────────────────────────────────────────────── */
+.review-list { margin-bottom: 26px; }
+.review-list-title { margin: 0 0 14px; font-size: 17px; color: var(--text-h); }
+.review-empty {
+  margin: 0 0 20px;
+  color: var(--text);
+  font-size: 14px;
+}
+.review-item {
+  padding: 14px 0;
+  border-top: 1px solid var(--border);
+}
+.review-item-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+.review-item-date { font-size: 12px; color: var(--text); }
+.review-item-comment { margin: 0; color: var(--text); line-height: 1.55; }
+
+/* ── Reviews: average rating badge ────────────────────────────────────────── */
+.rating-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.rating-badge-text { font-size: 13px; font-weight: 600; color: var(--text-h); }
+.rating-badge-count { font-weight: 400; color: var(--text); }
+.product-rating { display: inline-flex; }
+.detail-rating { margin-bottom: 4px; }
+
+/* ── Admin: reviews moderation ────────────────────────────────────────────── */
+.admin-reviews-tabs { margin-bottom: 20px; }
+.admin-review-list { display: flex; flex-direction: column; gap: 14px; }
+.admin-review {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  background: #fff;
+}
+.admin-review-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.admin-review-meta { font-size: 12px; color: var(--text); }
+.admin-review-comment { margin: 0 0 12px; color: var(--text); line-height: 1.5; }
+.admin-nav-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  margin-left: 8px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--accent-dark);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* ── Our Story post-it (homepage gutter note) ─────────────────────────────── */
+.our-story-note {
+  position: fixed;
+  top: 160px;
+  right: 28px;
+  width: 184px;
+  padding: 22px 20px 20px;
+  background: #fdeff0;
+  border: 1px solid var(--accent-border);
+  border-radius: 3px;
+  box-shadow: 0 10px 24px rgba(74, 42, 46, 0.16);
+  transform: rotate(-2.2deg);
+  z-index: 5;
+  display: none; /* shown only where there's gutter room (see media query) */
+}
+.our-story-tape {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%) rotate(-3deg);
+  width: 64px;
+  height: 18px;
+  background: rgba(183, 110, 121, 0.28);
+  border-radius: 1px;
+}
+.our-story-title {
+  font-family: var(--script);
+  font-size: 30px;
+  line-height: 1;
+  margin: 0 0 10px;
+  color: var(--accent-dark);
+}
+.our-story-text {
+  margin: 0 0 12px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-h);
+}
+.our-story-tagline {
+  margin: 0;
+  font-family: var(--script);
+  font-size: 18px;
+  line-height: 1.2;
+  color: var(--accent);
+}
+
+/* Only render the gutter note where the centred content leaves room beside it. */
+@media (min-width: 1560px) {
+  .our-story-note { display: block; }
+}

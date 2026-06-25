@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { ProductCard } from '../components/ProductCard';
 import { useProducts } from '../hooks/useProducts';
+import { useRatingSummaries } from '../hooks/useReviews';
 import { useTitle } from '../hooks/useTitle';
 
 export function BuiltOnRequestPage() {
@@ -10,6 +11,7 @@ export function BuiltOnRequestPage() {
     sort: 'createdAt,desc',
   });
   const products = data?.products ?? [];
+  const { data: ratings } = useRatingSummaries(products.map((p) => p.productNumber));
 
   return (
     <div className="sale-page">
@@ -30,7 +32,7 @@ export function BuiltOnRequestPage() {
       {!loading && !isError && products.length > 0 && (
         <div className="product-grid">
           {products.map((p) => (
-            <ProductCard key={p.productNumber} product={p} />
+            <ProductCard key={p.productNumber} product={p} rating={ratings?.[p.productNumber]} />
           ))}
         </div>
       )}

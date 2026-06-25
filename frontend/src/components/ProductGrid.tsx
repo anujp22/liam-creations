@@ -3,7 +3,9 @@ import type { ProductCategory } from '../api/products';
 import { ProductCard } from './ProductCard';
 import { CategoryFilter } from './CategoryFilter';
 import { SortSelect } from './SortSelect';
+import { OurStoryNote } from './OurStoryNote';
 import { useProducts } from '../hooks/useProducts';
+import { useRatingSummaries } from '../hooks/useReviews';
 import { useTitle } from '../hooks/useTitle';
 
 export function ProductGrid() {
@@ -28,9 +30,11 @@ export function ProductGrid() {
   const products = data?.products ?? [];
   const totalPages = data?.totalPages ?? 0;
   const totalElements = data?.totalElements ?? 0;
+  const { data: ratings } = useRatingSummaries(products.map((p) => p.productNumber));
 
   return (
     <>
+      <OurStoryNote />
       <input
         type="search"
         className="search-input"
@@ -52,7 +56,7 @@ export function ProductGrid() {
           <p className="grid-count">Showing {totalElements} products</p>
           <div className="product-grid">
             {products.map((p) => (
-              <ProductCard key={p.productNumber} product={p} />
+              <ProductCard key={p.productNumber} product={p} rating={ratings?.[p.productNumber]} />
             ))}
           </div>
           {totalPages > 1 && (

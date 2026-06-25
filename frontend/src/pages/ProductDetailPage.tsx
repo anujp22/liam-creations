@@ -3,7 +3,12 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { formatINR } from '../utils/money';
 import { useProduct } from '../hooks/useProducts';
+import { useRatingSummaries } from '../hooks/useReviews';
 import { useTitle } from '../hooks/useTitle';
+import { ReviewForm } from '../components/ReviewForm';
+import { ReviewList } from '../components/ReviewList';
+import { RatingBadge } from '../components/RatingBadge';
+import { ProductJsonLd } from '../components/ProductJsonLd';
 
 export function ProductDetailPage() {
   const { productNumber } = useParams<{ productNumber: string }>();
@@ -11,7 +16,10 @@ export function ProductDetailPage() {
   const navigate = useNavigate();
   const { addToCart, isInCart } = useCart();
   const { data: product, isPending, isError, error } = useProduct(productNumber);
-  useTitle(product?.title ?? 'Product');
+  const { data: ratings } = useRatingSummaries(productNumber ? [productNumber] : []);
+  useTitle(product?.title ?? 'Product', {
+    description: product ? product.description.slice(0, 160) : undefined,
+  });
 
   if (isPending) return <p className="grid-message">Loading...</p>;
   if (isError) return <p className="grid-message grid-error">{(error as Error).message}</p>;
@@ -25,6 +33,7 @@ export function ProductDetailPage() {
 
   return (
     <div className="detail">
+      <ProductJsonLd product={product} rating={ratings?.[product.productNumber]} />
       <button onClick={() => navigate(-1)} className="detail-back">
         ← Back to shop
       </button>
@@ -52,6 +61,9 @@ export function ProductDetailPage() {
           {product.featured && <span className="product-featured">Featured</span>}
         </span>
         <h2 className="detail-title">{product.title}</h2>
+        {ratings?.[product.productNumber] && (
+          <div className="detail-rating"><RatingBadge rating={ratings[product.productNumber]} size={16} /></div>
+        )}
         <p className="detail-description">{product.description}</p>
         <div className="detail-footer">
           {product.salePrice != null ? (
@@ -80,6 +92,11 @@ export function ProductDetailPage() {
           </p>
         )}
       </div>
+
+      <section className="detail-reviews">
+        <ReviewList productNumber={product.productNumber} />
+        <ReviewForm productNumber={product.productNumber} />
+      </section>
     </div>
   );
 }

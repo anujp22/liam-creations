@@ -7,6 +7,8 @@ import { CartPage } from './pages/CartPage';
 import { SalePage } from './pages/SalePage';
 import { BuiltOnRequestPage } from './pages/BuiltOnRequestPage';
 import { SiteFooter } from './components/SiteFooter';
+import { CanonicalLink } from './components/CanonicalLink';
+import { PageviewTracker } from './components/PageviewTracker';
 import { RequireAdmin } from './components/RequireAdmin';
 import { AdminLayout } from './pages/admin/AdminLayout';
 import { AdminLoginPage } from './pages/admin/AdminLoginPage';
@@ -15,6 +17,7 @@ import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { AdminInventory } from './pages/admin/AdminInventory';
 import { AdminDeleted } from './pages/admin/AdminDeleted';
 import { AdminOnSale } from './pages/admin/AdminOnSale';
+import { AdminReviews } from './pages/admin/AdminReviews';
 import { AdminProductFormPage } from './pages/admin/AdminProductFormPage';
 import { useCart } from './context/CartContext';
 import { useAdminAuth } from './context/AdminAuthContext';
@@ -63,7 +66,10 @@ function ShopLayout() {
 
 function App() {
   return (
-    <Routes>
+    <>
+      <CanonicalLink />
+      <PageviewTracker />
+      <Routes>
       <Route element={<ShopLayout />}>
         <Route path="/" element={<ProductGrid />} />
         <Route path="/products/:productNumber" element={<ProductDetailPage />} />
@@ -80,11 +86,13 @@ function App() {
           <Route path="/admin/products/new" element={<AdminProductFormPage />} />
           <Route path="/admin/products/:productNumber/edit" element={<AdminProductFormPage />} />
           <Route path="/admin/on-sale" element={<AdminOnSale />} />
+          <Route path="/admin/reviews" element={<AdminReviews />} />
           <Route path="/admin/inventory" element={<AdminInventory />} />
           <Route path="/admin/deleted" element={<AdminDeleted />} />
         </Route>
       </Route>
-    </Routes>
+      </Routes>
+    </>
   );
 }
 

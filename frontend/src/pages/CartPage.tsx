@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { effectivePrice } from '../api/products';
 import { formatINR } from '../utils/money';
+import { track } from '../utils/analytics';
 import { buildWhatsAppUrl, type CustomerDetails } from '../utils/whatsapp';
 import { useTitle } from '../hooks/useTitle';
 
@@ -51,6 +52,7 @@ export function CartPage() {
     try {
       setOrderError(null);
       window.open(buildWhatsAppUrl(items, total, customer), '_blank', 'noopener,noreferrer');
+      track('whatsapp-order', 'WhatsApp order');
     } catch (e) {
       setOrderError(e instanceof Error ? e.message : 'Could not start the WhatsApp order.');
     }
