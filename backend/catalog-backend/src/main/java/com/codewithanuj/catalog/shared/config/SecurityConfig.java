@@ -67,6 +67,7 @@ public class SecurityConfig {
                 return (isGet && path.startsWith("/api/products"))
                         || (isGet && path.startsWith("/api/reviews"))
                         || (isGet && path.startsWith("/uploads/"))
+                        || (isGet && path.equals("/sitemap.xml"))
                         || isReviewSubmit
                         || path.equals("/actuator/health");
             }
@@ -78,6 +79,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/actuator/health").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/sitemap.xml").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/products", "/api/products/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/products/*/reviews").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/reviews/**").permitAll()

@@ -42,6 +42,10 @@ class ValidationExceptionHandlerTest {
     @MockBean
     private com.codewithanuj.catalog.review.service.ReviewService reviewService;
 
+    // SitemapController (broad scan) needs the product repository
+    @MockBean
+    private com.codewithanuj.catalog.product.repository.ProductRepository productRepository;
+
     // Registers TestController as a bean so Spring MVC can discover its @PostMapping
     @TestConfiguration
     static class TestConfig {
