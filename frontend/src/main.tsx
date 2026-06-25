@@ -6,6 +6,9 @@ import './index.css'
 import App from './App.tsx'
 import { CartProvider } from './context/CartContext.tsx'
 import { AdminAuthProvider } from './context/AdminAuthContext.tsx'
+import { initAnalytics } from './utils/analytics.ts'
+
+initAnalytics()
 
 const queryClient = new QueryClient({
   defaultOptions: {

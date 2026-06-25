@@ -8,6 +8,7 @@ import { SalePage } from './pages/SalePage';
 import { BuiltOnRequestPage } from './pages/BuiltOnRequestPage';
 import { SiteFooter } from './components/SiteFooter';
 import { CanonicalLink } from './components/CanonicalLink';
+import { PageviewTracker } from './components/PageviewTracker';
 import { RequireAdmin } from './components/RequireAdmin';
 import { AdminLayout } from './pages/admin/AdminLayout';
 import { AdminLoginPage } from './pages/admin/AdminLoginPage';
@@ -67,6 +68,7 @@ function App() {
   return (
     <>
       <CanonicalLink />
+      <PageviewTracker />
       <Routes>
       <Route element={<ShopLayout />}>
         <Route path="/" element={<ProductGrid />} />

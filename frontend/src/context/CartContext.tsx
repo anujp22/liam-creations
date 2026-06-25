@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, type ReactNode } from 'react';
 import { effectivePrice } from '../api/products';
 import { roundMoney } from '../utils/money';
+import { track } from '../utils/analytics';
 import type { Product } from '../api/products';
 
 export interface CartItem {
@@ -46,6 +47,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   };
 
   const addToCart = (product: Product) => {
+    track('add-to-cart', 'Add to cart');
     setCart(prev => {
       const existing = prev[product.productNumber];
       const next = {

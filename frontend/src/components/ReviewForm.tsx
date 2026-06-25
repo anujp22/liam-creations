@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { submitReview } from '../api/reviews';
+import { track } from '../utils/analytics';
 import { StarRating } from './StarRating';
 
 interface Props {
@@ -25,6 +26,7 @@ export function ReviewForm({ productNumber, onSubmitted }: Props) {
     setSubmitting(true);
     try {
       await submitReview(productNumber, { rating, comment: comment.trim() });
+      track('review-submitted', 'Review submitted');
       setDone(true);
       onSubmitted?.();
     } catch (err) {
