@@ -3,9 +3,11 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { formatINR } from '../utils/money';
 import { useProduct } from '../hooks/useProducts';
+import { useRatingSummaries } from '../hooks/useReviews';
 import { useTitle } from '../hooks/useTitle';
 import { ReviewForm } from '../components/ReviewForm';
 import { ReviewList } from '../components/ReviewList';
+import { RatingBadge } from '../components/RatingBadge';
 
 export function ProductDetailPage() {
   const { productNumber } = useParams<{ productNumber: string }>();
@@ -13,6 +15,7 @@ export function ProductDetailPage() {
   const navigate = useNavigate();
   const { addToCart, isInCart } = useCart();
   const { data: product, isPending, isError, error } = useProduct(productNumber);
+  const { data: ratings } = useRatingSummaries(productNumber ? [productNumber] : []);
   useTitle(product?.title ?? 'Product');
 
   if (isPending) return <p className="grid-message">Loading...</p>;
@@ -54,6 +57,9 @@ export function ProductDetailPage() {
           {product.featured && <span className="product-featured">Featured</span>}
         </span>
         <h2 className="detail-title">{product.title}</h2>
+        {ratings?.[product.productNumber] && (
+          <div className="detail-rating"><RatingBadge rating={ratings[product.productNumber]} size={16} /></div>
+        )}
         <p className="detail-description">{product.description}</p>
         <div className="detail-footer">
           {product.salePrice != null ? (

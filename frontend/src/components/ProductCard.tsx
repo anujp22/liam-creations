@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { Product } from '../api/products';
+import type { RatingSummary } from '../api/reviews';
 import { useCart } from '../context/CartContext';
 import { formatINR } from '../utils/money';
+import { RatingBadge } from './RatingBadge';
 
 interface Props {
   product: Product;
+  rating?: RatingSummary | null;
 }
 
 /** Full image gallery: prefer the images[] list, falling back to the legacy single imageUrl. */
@@ -14,7 +17,7 @@ function galleryOf(product: Product): string[] {
   return product.imageUrl ? [product.imageUrl] : [];
 }
 
-export function ProductCard({ product }: Props) {
+export function ProductCard({ product, rating }: Props) {
   const { addToCart, isInCart } = useCart();
   const inCart = isInCart(product.productNumber);
   const [hover, setHover] = useState(false);
@@ -50,6 +53,9 @@ export function ProductCard({ product }: Props) {
           {product.salePrice != null && <span className="product-sale-badge">Sale</span>}
         </span>
         <h2 className="product-title">{product.title}</h2>
+        {rating && rating.count > 0 && (
+          <span className="product-rating"><RatingBadge rating={rating} size={14} /></span>
+        )}
         <p className="product-description">{product.description}</p>
         <div className="product-footer">
           {product.salePrice != null ? (

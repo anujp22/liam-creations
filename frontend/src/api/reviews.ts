@@ -26,6 +26,23 @@ export interface ReviewPage {
   totalElements: number;
 }
 
+export interface RatingSummary {
+  average: number | null;
+  count: number;
+}
+
+/** Approved-only average + count for several products in one call. */
+export async function fetchRatingSummaries(
+  productNumbers: string[],
+): Promise<Record<string, RatingSummary>> {
+  if (productNumbers.length === 0) return {};
+  const params = new URLSearchParams();
+  productNumbers.forEach((n) => params.append('productNumbers', n));
+  const res = await fetch(`/api/reviews/summary?${params.toString()}`);
+  if (!res.ok) throw new Error(`Failed to load ratings (${res.status})`);
+  return res.json();
+}
+
 /** Approved reviews for a product, newest first. */
 export async function fetchReviews(productNumber: string, page = 0): Promise<ReviewPage> {
   const res = await fetch(`/api/products/${productNumber}/reviews?page=${page}`);
