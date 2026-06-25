@@ -7,6 +7,7 @@ import { CartPage } from './pages/CartPage';
 import { SalePage } from './pages/SalePage';
 import { BuiltOnRequestPage } from './pages/BuiltOnRequestPage';
 import { SiteFooter } from './components/SiteFooter';
+import { CanonicalLink } from './components/CanonicalLink';
 import { RequireAdmin } from './components/RequireAdmin';
 import { AdminLayout } from './pages/admin/AdminLayout';
 import { AdminLoginPage } from './pages/admin/AdminLoginPage';
@@ -64,7 +65,9 @@ function ShopLayout() {
 
 function App() {
   return (
-    <Routes>
+    <>
+      <CanonicalLink />
+      <Routes>
       <Route element={<ShopLayout />}>
         <Route path="/" element={<ProductGrid />} />
         <Route path="/products/:productNumber" element={<ProductDetailPage />} />
@@ -86,7 +89,8 @@ function App() {
           <Route path="/admin/deleted" element={<AdminDeleted />} />
         </Route>
       </Route>
-    </Routes>
+      </Routes>
+    </>
   );
 }
 
