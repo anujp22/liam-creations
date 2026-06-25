@@ -3,6 +3,7 @@ import type { ProductCategory } from '../api/products';
 import { ProductCard } from './ProductCard';
 import { CategoryFilter } from './CategoryFilter';
 import { SortSelect } from './SortSelect';
+import { OurStoryNote } from './OurStoryNote';
 import { useProducts } from '../hooks/useProducts';
 import { useRatingSummaries } from '../hooks/useReviews';
 import { useTitle } from '../hooks/useTitle';
@@ -33,6 +34,7 @@ export function ProductGrid() {
 
   return (
     <>
+      <OurStoryNote />
       <input
         type="search"
         className="search-input"

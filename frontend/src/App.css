@@ -1902,3 +1902,54 @@
   font-size: 11px;
   font-weight: 700;
 }
+
+/* ── Our Story post-it (homepage gutter note) ─────────────────────────────── */
+.our-story-note {
+  position: fixed;
+  top: 160px;
+  right: 28px;
+  width: 184px;
+  padding: 22px 20px 20px;
+  background: #fdeff0;
+  border: 1px solid var(--accent-border);
+  border-radius: 3px;
+  box-shadow: 0 10px 24px rgba(74, 42, 46, 0.16);
+  transform: rotate(-2.2deg);
+  z-index: 5;
+  display: none; /* shown only where there's gutter room (see media query) */
+}
+.our-story-tape {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%) rotate(-3deg);
+  width: 64px;
+  height: 18px;
+  background: rgba(183, 110, 121, 0.28);
+  border-radius: 1px;
+}
+.our-story-title {
+  font-family: var(--script);
+  font-size: 30px;
+  line-height: 1;
+  margin: 0 0 10px;
+  color: var(--accent-dark);
+}
+.our-story-text {
+  margin: 0 0 12px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-h);
+}
+.our-story-tagline {
+  margin: 0;
+  font-family: var(--script);
+  font-size: 18px;
+  line-height: 1.2;
+  color: var(--accent);
+}
+
+/* Only render the gutter note where the centred content leaves room beside it. */
+@media (min-width: 1560px) {
+  .our-story-note { display: block; }
+}
