@@ -1,0 +1,11 @@
+-- Converges the prod schema with dev.
+--
+-- V1 created products.instagram_post_url as TEXT NOT NULL, and V3 dropped it.
+-- V2/V3 are demo seed data and now live in classpath:db/seed, which only the dev
+-- profile loads (see spring.flyway.locations). A fresh production database therefore
+-- never runs V3 and would keep a NOT NULL column that the Product entity never
+-- populates — making every insert fail.
+--
+-- IF EXISTS is load-bearing, not defensive tidiness: this is a no-op on any database
+-- that already ran V3 (dev), and the actual fix everywhere else (prod, CI).
+ALTER TABLE products DROP COLUMN IF EXISTS instagram_post_url;
