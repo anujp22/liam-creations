@@ -25,6 +25,10 @@ import java.time.Duration;
  *
  * <p>Buckets live in a Caffeine cache that expires idle keys after 10 minutes
  * and caps total entries, so the map can't grow unbounded under many client IPs.
+ *
+ * <p>Behind a load balancer the socket address is the proxy's, not the caller's, which
+ * would collapse every visitor into one bucket — a single review submitter could lock
+ * out the whole internet. {@link ClientIpResolver} recovers the real client address.
  */
 public class ApiRateLimitFilter extends OncePerRequestFilter {
 
@@ -36,12 +40,19 @@ public class ApiRateLimitFilter extends OncePerRequestFilter {
             .maximumSize(100_000)
             .build();
 
+    private final ClientIpResolver clientIpResolver;
+
+    /** @param trustedProxyCount number of reverse proxies in front of the app (0 in dev). */
+    public ApiRateLimitFilter(int trustedProxyCount) {
+        this.clientIpResolver = new ClientIpResolver(trustedProxyCount);
+    }
+
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain chain) throws ServletException, IOException {
         String uri = request.getRequestURI();
-        String ip = request.getRemoteAddr();
+        String ip = clientIpResolver.resolve(request);
 
         Bucket bucket;
         if (uri.startsWith("/api/admin/")) {

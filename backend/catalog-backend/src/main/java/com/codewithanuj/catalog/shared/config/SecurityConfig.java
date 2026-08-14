@@ -42,6 +42,10 @@ public class SecurityConfig {
     @Value("${cors.allowed-origin.prod}")
     private String corsOriginProd;
 
+    /** Reverse proxies in front of the app; drives client-IP resolution for rate limiting. */
+    @Value("${app.trusted-proxy-count:0}")
+    private int trustedProxyCount;
+
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
@@ -88,7 +92,7 @@ public class SecurityConfig {
                         .anyRequest().denyAll()
                 )
                 .addFilterAt(basicFilter, BasicAuthenticationFilter.class)
-                .addFilterBefore(new ApiRateLimitFilter(), BasicAuthenticationFilter.class)
+                .addFilterBefore(new ApiRateLimitFilter(trustedProxyCount), BasicAuthenticationFilter.class)
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(entryPoint));
 
         return http.build();
