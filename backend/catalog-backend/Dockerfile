@@ -14,16 +14,20 @@ COPY src ./src
 RUN mvn -B clean package -DskipTests
 
 # ── run ──────────────────────────────────────────────────────────────────────
-FROM eclipse-temurin:17-jre-alpine AS runtime
+# Not the -alpine variant: Temurin does not publish it for arm64, so it fails to
+# build on Apple Silicon. jammy is multi-arch (amd64 + arm64) and builds anywhere.
+FROM eclipse-temurin:17-jre-jammy AS runtime
 
 # curl is needed by the healthcheck below; wget would also do, but curl gives
 # clearer failure output in `docker inspect`.
-RUN apk add --no-cache curl
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
 
 # Run as a non-root user. Uploaded files land in /app/uploads, which must be
 # writable by this user — in production that path should be an S3 bucket
 # instead (see A2), since container-local storage is wiped on every deploy.
-RUN addgroup -S catalog && adduser -S catalog -G catalog
+RUN groupadd --system catalog && useradd --system --gid catalog catalog
 WORKDIR /app
 COPY --from=build /build/target/catalog-backend-*.jar app.jar
 RUN mkdir -p /app/uploads && chown -R catalog:catalog /app
