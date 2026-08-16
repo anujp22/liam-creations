@@ -36,23 +36,13 @@ public class ProductService {
 
     @Transactional(readOnly = true)
     public Page<ProductResponseDto> getProducts(ProductStatus status, ProductCategory category, String search, boolean onSale, Pageable pageable) {
-        if (onSale) {
-            return productRepository.findBySalePriceIsNotNullAndDeletedFalse(pageable).map(this::toDto);
-        }
-        String normalizedSearch = (search != null && !search.isBlank()) ? search.trim() : null;
-        if (normalizedSearch != null) {
-            return productRepository.findFiltered(status, category, normalizedSearch, pageable).map(this::toDto);
-        }
-        if (status != null && category != null) {
-            return productRepository.findByStatusAndCategoryAndDeletedFalse(status, category, pageable).map(this::toDto);
-        }
-        if (status != null) {
-            return productRepository.findByStatusAndDeletedFalse(status, pageable).map(this::toDto);
-        }
-        if (category != null) {
-            return productRepository.findByCategoryAndDeletedFalse(category, pageable).map(this::toDto);
-        }
-        return productRepository.findByDeletedFalse(pageable).map(this::toDto);
+        // One query handles every combination. The previous version returned early for
+        // onSale and dropped status/category/search on the floor, so "sale + category"
+        // silently returned the whole sale list.
+        // Empty string, not null: an untyped null parameter makes Postgres reject
+        // LOWER(?) at runtime. See the note on findFiltered.
+        String normalizedSearch = (search != null && !search.isBlank()) ? search.trim() : "";
+        return productRepository.findFiltered(status, category, normalizedSearch, onSale, pageable).map(this::toDto);
     }
 
     @Transactional(readOnly = true)

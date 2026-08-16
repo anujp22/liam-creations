@@ -53,7 +53,7 @@ class ProductServiceTest {
     @Test
     void getProductsWithNoFiltersReturnsMappedDtoList() {
         Pageable pageable = PageRequest.of(0, 20);
-        when(productRepository.findByDeletedFalse(pageable)).thenReturn(new PageImpl<>(List.of(
+        when(productRepository.findFiltered(null, null, "", false, pageable)).thenReturn(new PageImpl<>(List.of(
                 product("PRD-001", ProductStatus.IN_STOCK),
                 product("PRD-002", ProductStatus.OUT_OF_STOCK)
         )));
@@ -68,7 +68,7 @@ class ProductServiceTest {
     @Test
     void getProductsByStatusDelegatesToRepositoryFindByStatus() {
         Pageable pageable = PageRequest.of(0, 20);
-        when(productRepository.findByStatusAndDeletedFalse(ProductStatus.IN_STOCK, pageable))
+        when(productRepository.findFiltered(ProductStatus.IN_STOCK, null, "", false, pageable))
                 .thenReturn(new PageImpl<>(List.of(product("PRD-001", ProductStatus.IN_STOCK))));
 
         Page<ProductResponseDto> result = productService.getProducts(ProductStatus.IN_STOCK, null, null, false, pageable);
@@ -102,7 +102,7 @@ class ProductServiceTest {
     @Test
     void getProductsDelegatesToFindFiltered() {
         Pageable pageable = PageRequest.of(0, 20);
-        when(productRepository.findFiltered(null, null, "silk", pageable))
+        when(productRepository.findFiltered(null, null, "silk", false, pageable))
                 .thenReturn(new PageImpl<>(List.of(product("PRD-001", ProductStatus.IN_STOCK))));
 
         Page<ProductResponseDto> result = productService.getProducts(null, null, "silk", false, pageable);
@@ -112,14 +112,46 @@ class ProductServiceTest {
     }
 
     @Test
-    void getProductsNormalisesBlankSearchToNullAndFallsBackToFindAll() {
+    void getProductsNormalisesBlankSearchToEmptyStringAndReturnsEverything() {
         Pageable pageable = PageRequest.of(0, 20);
-        when(productRepository.findByDeletedFalse(pageable))
+        // A blank search must reach the repository as "" — never as "   ", and never as
+        // null, which Postgres rejects (see the note on findFiltered).
+        when(productRepository.findFiltered(null, null, "", false, pageable))
                 .thenReturn(new PageImpl<>(List.of(product("PRD-001", ProductStatus.IN_STOCK))));
 
         Page<ProductResponseDto> result = productService.getProducts(null, null, "   ", false, pageable);
 
         assertThat(result.getTotalElements()).isEqualTo(1);
+    }
+
+    // ── On-sale combined with other filters (A8) ──────────────────────────────
+
+    @Test
+    void onSaleKeepsCategoryFilter() {
+        Pageable pageable = PageRequest.of(0, 20);
+        when(productRepository.findFiltered(null, ProductCategory.BRIDAL_SAREES, "", true, pageable))
+                .thenReturn(new PageImpl<>(List.of(product("PRD-001", ProductStatus.IN_STOCK))));
+
+        Page<ProductResponseDto> result =
+                productService.getProducts(null, ProductCategory.BRIDAL_SAREES, null, true, pageable);
+
+        // Previously onSale returned early and the category was dropped, so a sale
+        // listing filtered by category silently returned every on-sale product.
+        assertThat(result.getTotalElements()).isEqualTo(1);
+        verify(productRepository).findFiltered(null, ProductCategory.BRIDAL_SAREES, "", true, pageable);
+    }
+
+    @Test
+    void onSaleKeepsStatusAndSearchFilters() {
+        Pageable pageable = PageRequest.of(0, 20);
+        when(productRepository.findFiltered(ProductStatus.IN_STOCK, null, "silk", true, pageable))
+                .thenReturn(new PageImpl<>(List.of(product("PRD-001", ProductStatus.IN_STOCK))));
+
+        Page<ProductResponseDto> result =
+                productService.getProducts(ProductStatus.IN_STOCK, null, "silk", true, pageable);
+
+        assertThat(result.getTotalElements()).isEqualTo(1);
+        verify(productRepository).findFiltered(ProductStatus.IN_STOCK, null, "silk", true, pageable);
     }
 
     // ── Soft delete / restore / permanent delete ───────────────────────────────
