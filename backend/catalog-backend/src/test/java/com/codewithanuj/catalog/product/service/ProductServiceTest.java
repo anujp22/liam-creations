@@ -28,6 +28,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -307,6 +308,84 @@ class ProductServiceTest {
 
         assertThat(result.productNumber()).isEqualTo("PRD-001");
         assertThat(result.status()).isEqualTo(ProductStatus.OUT_OF_STOCK);
+    }
+
+    // ── Orphaned image cleanup on update (A9) ─────────────────────────────────
+
+    /** Product carrying an existing gallery, as it would look before an update. */
+    private Product productWithImages(String... urls) {
+        Product p = product("PRD-001", ProductStatus.IN_STOCK);
+        p.setImages(new java.util.ArrayList<>(List.of(urls)));
+        p.setImageUrl(urls.length > 0 ? urls[0] : null);
+        return p;
+    }
+
+    private ProductUpdateRequest updateWithImages(List<String> images) {
+        return new ProductUpdateRequest(
+                "Saree", "Desc", new BigDecimal("9500.00"), "INR",
+                ProductStatus.IN_STOCK, false,
+                images.isEmpty() ? null : images.get(0),
+                ProductCategory.BRIDAL_SAREES, null, images
+        );
+    }
+
+    @Test
+    void updateProductDeletesImagesRemovedFromTheGallery() {
+        when(productRepository.findById("PRD-001"))
+                .thenReturn(Optional.of(productWithImages("/uploads/a.jpg", "/uploads/b.jpg", "/uploads/c.jpg")));
+        when(productRepository.save(any())).thenReturn(product("PRD-001", ProductStatus.IN_STOCK));
+
+        productService.updateProduct("PRD-001", updateWithImages(List.of("/uploads/a.jpg")));
+
+        verify(storageService).delete("/uploads/b.jpg");
+        verify(storageService).delete("/uploads/c.jpg");
+        // Still referenced — deleting it would break the live product page.
+        verify(storageService, never()).delete("/uploads/a.jpg");
+    }
+
+    @Test
+    void updateProductKeepsAnImageThatIsStillTheThumbnail() {
+        Product existing = productWithImages("/uploads/a.jpg", "/uploads/b.jpg");
+        when(productRepository.findById("PRD-001")).thenReturn(Optional.of(existing));
+        when(productRepository.save(any())).thenReturn(product("PRD-001", ProductStatus.IN_STOCK));
+
+        // Gallery is cleared, but a.jpg remains the primary imageUrl and is still shown
+        // on the product card, so its file must survive.
+        ProductUpdateRequest request = new ProductUpdateRequest(
+                "Saree", "Desc", new BigDecimal("9500.00"), "INR",
+                ProductStatus.IN_STOCK, false, "/uploads/a.jpg",
+                ProductCategory.BRIDAL_SAREES, null, List.of()
+        );
+        productService.updateProduct("PRD-001", request);
+
+        verify(storageService, never()).delete("/uploads/a.jpg");
+        verify(storageService).delete("/uploads/b.jpg");
+    }
+
+    @Test
+    void updateProductDeletesNothingWhenTheGalleryIsUnchanged() {
+        when(productRepository.findById("PRD-001"))
+                .thenReturn(Optional.of(productWithImages("/uploads/a.jpg", "/uploads/b.jpg")));
+        when(productRepository.save(any())).thenReturn(product("PRD-001", ProductStatus.IN_STOCK));
+
+        productService.updateProduct("PRD-001",
+                updateWithImages(List.of("/uploads/a.jpg", "/uploads/b.jpg")));
+
+        verify(storageService, never()).delete(any());
+    }
+
+    @Test
+    void updateProductSucceedsEvenIfDeletingAnOldImageFails() {
+        when(productRepository.findById("PRD-001"))
+                .thenReturn(Optional.of(productWithImages("/uploads/a.jpg", "/uploads/b.jpg")));
+        when(productRepository.save(any())).thenReturn(product("PRD-001", ProductStatus.IN_STOCK));
+        doThrow(new RuntimeException("S3 unavailable")).when(storageService).delete("/uploads/b.jpg");
+
+        // A storage outage must not stop the owner editing their product.
+        ProductResponseDto result =
+                productService.updateProduct("PRD-001", updateWithImages(List.of("/uploads/a.jpg")));
+
+        assertThat(result.productNumber()).isEqualTo("PRD-001");
     }
 
     @Test
