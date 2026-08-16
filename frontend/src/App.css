@@ -621,6 +621,28 @@
   }
 }
 
+/* Shown when a cart item was taken down since it was added. Uses the muted
+   surface rather than an error red: this is expected housekeeping, not a fault. */
+.cart-unavailable-note {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-muted, rgba(0, 0, 0, 0.03));
+  color: var(--text-muted, var(--text));
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.cart-empty .cart-unavailable-note {
+  align-items: center;
+  text-align: center;
+}
+
 .cart-heading {
   display: flex;
   align-items: center;

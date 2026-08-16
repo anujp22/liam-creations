@@ -20,7 +20,7 @@ function loadCustomer(): CustomerDetails {
 }
 
 export function CartPage() {
-  const { items, itemCount, total, removeFromCart, updateQuantity, clearCart } = useCart();
+  const { items, itemCount, total, removeFromCart, updateQuantity, clearCart, unavailable, isLoading } = useCart();
   useTitle('Your Order');
 
   const [customer, setCustomer] = useState<CustomerDetails>(loadCustomer);
@@ -58,9 +58,21 @@ export function CartPage() {
     }
   };
 
+  // Prices are re-fetched on every cart load, so hold the totals back until they
+  // arrive rather than briefly showing a wrong number.
+  if (isLoading && items.length === 0 && unavailable.length === 0) {
+    return <p className="grid-message">Loading your cart…</p>;
+  }
+
   if (items.length === 0) {
     return (
       <div className="cart-empty">
+        {unavailable.length > 0 && (
+          <p className="cart-unavailable-note">
+            {unavailable.length === 1 ? 'The item' : 'The items'} in your cart{' '}
+            {unavailable.length === 1 ? 'is' : 'are'} no longer available.
+          </p>
+        )}
         <p className="cart-empty-text">Your cart is empty.</p>
         <Link to="/" className="cart-back-link">← Browse catalog</Link>
       </div>
@@ -76,6 +88,25 @@ export function CartPage() {
         </h2>
         <button onClick={clearCart} className="cart-clear-btn">Clear all</button>
       </div>
+
+      {unavailable.length > 0 && (
+        <div className="cart-unavailable-note">
+          <p>
+            {unavailable.length} {unavailable.length === 1 ? 'item is' : 'items are'} no longer
+            available and {unavailable.length === 1 ? 'has' : 'have'} been left out of your order.
+          </p>
+          {unavailable.map((productNumber) => (
+            <button
+              key={productNumber}
+              type="button"
+              className="cart-back-link"
+              onClick={() => removeFromCart(productNumber)}
+            >
+              Remove {productNumber}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="cart-items">
         {items.map(({ product, quantity }) => {
