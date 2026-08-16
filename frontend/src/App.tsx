@@ -18,6 +18,8 @@ import { AdminInventory } from './pages/admin/AdminInventory';
 import { AdminDeleted } from './pages/admin/AdminDeleted';
 import { AdminOnSale } from './pages/admin/AdminOnSale';
 import { AdminReviews } from './pages/admin/AdminReviews';
+import { NotFoundPage } from './pages/NotFoundPage';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { AdminProductFormPage } from './pages/admin/AdminProductFormPage';
 import { useCart } from './context/CartContext';
 import { useAdminAuth } from './context/AdminAuthContext';
@@ -66,7 +68,7 @@ function ShopLayout() {
 
 function App() {
   return (
-    <>
+    <ErrorBoundary>
       <CanonicalLink />
       <PageviewTracker />
       <Routes>
@@ -76,6 +78,8 @@ function App() {
         <Route path="/sale" element={<SalePage />} />
         <Route path="/built-on-request" element={<BuiltOnRequestPage />} />
         <Route path="/cart" element={<CartPage />} />
+        {/* Catch-all inside ShopLayout so unknown URLs keep the header and footer. */}
+        <Route path="*" element={<NotFoundPage />} />
       </Route>
 
       <Route path="/admin/login" element={<AdminLoginPage />} />
@@ -92,7 +96,7 @@ function App() {
         </Route>
       </Route>
       </Routes>
-    </>
+    </ErrorBoundary>
   );
 }
 
