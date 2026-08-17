@@ -6,6 +6,7 @@ import { formatINR } from '../utils/money';
 import { track } from '../utils/analytics';
 import { buildWhatsAppUrl, type CustomerDetails } from '../utils/whatsapp';
 import { useTitle } from '../hooks/useTitle';
+import { Thumb } from '../components/Thumb';
 
 const CUSTOMER_KEY = 'lc-customer';
 
@@ -116,7 +117,7 @@ export function CartPage() {
             <div key={product.productNumber} className="cart-item">
               <div className="cart-item-info">
                 {product.imageUrl && (
-                  <img src={product.imageUrl} alt={product.title} className="cart-item-image" />
+                  <Thumb src={product.imageUrl} alt={product.title} className="cart-item-image" />
                 )}
                 <div className="cart-item-text">
                   <p className="cart-item-title">{product.title}</p>

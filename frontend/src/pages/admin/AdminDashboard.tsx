@@ -6,6 +6,7 @@ import { deleteProduct, patchFeatured, patchStatus } from '../../api/admin';
 import { invalidateProductData, useProducts } from '../../hooks/useProducts';
 import { formatINR } from '../../utils/money';
 import { useTitle } from '../../hooks/useTitle';
+import { Thumb } from '../../components/Thumb';
 
 const STATUS_OPTIONS: { value: ProductStatus; label: string }[] = [
   { value: 'IN_STOCK', label: 'In stock' },
@@ -113,7 +114,7 @@ export function AdminDashboard() {
             <div key={p.productNumber} className={`admin-row${busy === p.productNumber ? ' admin-row--busy' : ''}`}>
               <span className="admin-cell-product">
                 {p.imageUrl
-                  ? <img src={p.imageUrl} alt="" className="admin-thumb" />
+                  ? <Thumb src={p.imageUrl} alt="" className="admin-thumb" />
                   : <span className="admin-thumb admin-thumb--empty" />}
                 <span className="admin-cell-text">
                   <span className="admin-cell-name">{p.title}</span>

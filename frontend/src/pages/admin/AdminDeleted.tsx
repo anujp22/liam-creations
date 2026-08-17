@@ -4,6 +4,7 @@ import type { Product } from '../../api/products';
 import { hardDeleteProduct, restoreProduct } from '../../api/admin';
 import { invalidateProductData, useDeletedProducts } from '../../hooks/useProducts';
 import { useTitle } from '../../hooks/useTitle';
+import { Thumb } from '../../components/Thumb';
 
 export function AdminDeleted() {
   const [page, setPage] = useState(0);
@@ -57,7 +58,7 @@ export function AdminDeleted() {
             <div key={p.productNumber} className={`admin-row admin-row--deleted${busy === p.productNumber ? ' admin-row--busy' : ''}`}>
               <span className="admin-cell-product">
                 {p.imageUrl
-                  ? <img src={p.imageUrl} alt="" className="admin-thumb" />
+                  ? <Thumb src={p.imageUrl} alt="" className="admin-thumb" />
                   : <span className="admin-thumb admin-thumb--empty" />}
                 <span className="admin-cell-text">
                   <span className="admin-cell-name">{p.title}</span>

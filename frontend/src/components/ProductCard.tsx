@@ -5,6 +5,7 @@ import type { RatingSummary } from '../api/reviews';
 import { useCart } from '../context/CartContext';
 import { formatINR } from '../utils/money';
 import { RatingBadge } from './RatingBadge';
+import { Thumb } from './Thumb';
 
 interface Props {
   product: Product;
@@ -36,7 +37,7 @@ export function ProductCard({ product, rating }: Props) {
             onMouseEnter={() => setHover(true)}
             onMouseLeave={() => setHover(false)}
           >
-            <img src={shownImage} alt={product.title} className="product-image" />
+            <Thumb src={shownImage} alt={product.title} className="product-image" />
             {hasMultiple && (
               <span className="product-photo-count" aria-label={`${gallery.length} photos`}>
                 <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" aria-hidden="true">
