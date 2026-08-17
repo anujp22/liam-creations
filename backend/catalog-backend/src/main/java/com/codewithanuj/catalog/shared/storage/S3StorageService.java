@@ -9,11 +9,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
+import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import software.amazon.awssdk.services.s3.model.S3Exception;
 
 /**
  * Stores uploaded images in S3. Enabled with {@code app.storage=s3}.
@@ -79,7 +79,10 @@ public class S3StorageService implements StorageService {
                 .build();
         try {
             s3.putObject(request, RequestBody.fromBytes(image.bytes()));
-        } catch (S3Exception e) {
+        } catch (SdkException e) {
+            // SdkException, not S3Exception: a timeout or connection failure arrives as
+            // SdkClientException, which is a sibling of S3Exception rather than a
+            // subtype — and is the more likely failure of the two.
             log.error("S3 upload failed for {}: {}", image.filename(), e.getMessage());
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to store file", e);
         }
@@ -92,9 +95,10 @@ public class S3StorageService implements StorageService {
         String key = keyPrefix + url.substring(urlPrefix.length());
         try {
             s3.deleteObject(DeleteObjectRequest.builder().bucket(bucket).key(key).build());
-        } catch (S3Exception e) {
+        } catch (SdkException e) {
             // Best effort, same contract as the local implementation: a failed cleanup
-            // must never fail the product update that triggered it.
+            // must never fail the product update that triggered it. StorageService.delete
+            // promises never to throw, so this has to catch the whole SDK hierarchy.
             log.warn("Failed to delete S3 object {}: {}", key, e.getMessage());
         }
     }

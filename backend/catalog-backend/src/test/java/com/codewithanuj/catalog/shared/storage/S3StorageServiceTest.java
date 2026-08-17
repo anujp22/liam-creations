@@ -3,7 +3,10 @@ package com.codewithanuj.catalog.shared.storage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.web.server.ResponseStatusException;
+import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
@@ -18,6 +21,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -86,11 +90,36 @@ class S3StorageServiceTest {
 
     /** Cleanup runs during a product update; a failure there must not fail the update. */
     @Test
-    void deleteSwallowsS3Failures() {
+    void deleteSwallowsS3ServiceErrors() {
         doThrow(S3Exception.builder().message("access denied").build())
                 .when(s3).deleteObject(any(DeleteObjectRequest.class));
 
         assertThatCode(() -> storage.delete("/uploads/abc.jpg")).doesNotThrowAnyException();
+    }
+
+    /**
+     * A timeout arrives as SdkClientException, which is a sibling of S3Exception rather
+     * than a subtype — and is the likelier failure. Catching only S3Exception would let
+     * this escape, breaking StorageService.delete's "never throws" contract.
+     */
+    @Test
+    void deleteSwallowsNetworkFailuresToo() {
+        doThrow(SdkClientException.create("connection reset"))
+                .when(s3).deleteObject(any(DeleteObjectRequest.class));
+
+        assertThatCode(() -> storage.delete("/uploads/abc.jpg")).doesNotThrowAnyException();
+    }
+
+    /** An upload failure, by contrast, must surface — as a clean 500, not a raw SDK error. */
+    @Test
+    void storeReportsNetworkFailuresAsAServerError() {
+        doThrow(SdkClientException.create("connection reset"))
+                .when(s3).putObject(any(PutObjectRequest.class), any(RequestBody.class));
+
+        assertThatThrownBy(() -> storage.store(jpegUpload()))
+                .isInstanceOf(ResponseStatusException.class)
+                .extracting(e -> ((ResponseStatusException) e).getStatusCode())
+                .isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     private MockMultipartFile jpegUpload() throws IOException {
