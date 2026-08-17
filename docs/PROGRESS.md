@@ -1,7 +1,7 @@
 # Launch-readiness progress
 
-Checkpoint: **2026-08-16**. Branch `feature/launch-blockers` (10 commits, not yet pushed).
-Backend **100 tests green**; frontend builds and lints clean (still no frontend tests).
+Checkpoint: **2026-08-16**. Branch `feature/launch-blockers` (13 commits, not yet pushed).
+Backend **117 tests green**; frontend builds and lints clean (still no frontend tests).
 
 Working through an external audit (items A0–A15) to take the app from local-only to a
 real public deployment where the shop owner uploads products and customers browse,
@@ -37,6 +37,7 @@ mostly on mobile.
 | **A8** | `onSale=true` discarded status, category and search. Folded into one `findFiltered` query. |
 | **A9** | Photos removed from a product leaked their files forever. Now diffed and deleted, best-effort. |
 | **A11** | Cart persisted a full Product snapshot including price, so returning customers saw and WhatsApp-quoted stale prices. Now stores only product numbers + quantities; prices re-fetched every load. Legacy carts migrated. |
+| **A2** | Photos were stored byte-for-byte in the container: a product page came to 20-40MB, and every deploy wiped the files. Uploads now go through `ImageProcessor` (~1600px web image + 400px thumbnail), and `app.storage=s3` swaps in `S3StorageService`. Listings load the thumbnail; only the detail page loads the full image. **Verified end to end** against MinIO and a real 6.1MB photo: 92KB web + 9.8KB thumb, and a browser run showing the grid pulling 9KB per card. |
 | **A10** | **Investigated — audit's claim was wrong.** `findFiltered` works fine on real Postgres; Hibernate 6 binds enum parameters with explicit types. No fix needed. |
 | — | `PUBLIC_BASE_URL` had no prod value, so the live sitemap would have advertised `localhost` URLs. Now required. |
 | — | `eclipse-temurin:17-jre-alpine` has no arm64 build; the image would not build on Apple Silicon. Switched to `17-jre-jammy`. |
@@ -46,8 +47,7 @@ mostly on mobile.
 ## Still to do
 
 **Blocks the owner from using it**
-- **A2 — S3 storage + resize on upload.** Photos currently live inside the container and are wiped on every deploy. **This is the next task.** AWS SDK v2 (S3) and Thumbnailator are approved.
-- **A13 — fail fast in prod** if the admin password is unset, blank, or still `admin123`.
+- **A13 — fail fast in prod** if the admin password is unset, blank, or still `admin123`. **This is the next task.**
 
 **Then**
 - **Orders feature** (new, agreed above): entity + migration, order codes, capture on WhatsApp handoff, admin Orders screen.
@@ -58,9 +58,36 @@ mostly on mobile.
 
 ---
 
+## Decisions made inside A2 — worth knowing before changing that code
+
+- **The thumbnail is found by filename, not stored in a column.** A thumbnail is the web
+  filename with `-thumb` before the extension. This avoided a migration, but the
+  convention is now load-bearing in three places: `ImageVariants.thumbUrlFor` (used by
+  both storage backends when deleting), and `frontend/src/utils/images.ts`. Changing the
+  naming means changing all three and orphaning every existing thumbnail.
+- **Stored image URLs stay relative** (`/uploads/<key>`). An absolute CDN URL would bake
+  a domain into every row. The cost is that the edge must route `/uploads/*` at the
+  bucket — a deployment step, not something the app can do for itself.
+- **WEBP and GIF are stored unresized.** Stock JDK 17 has no ImageIO reader for them.
+  They are already-compressed web formats, so the size problem barely applies; the
+  alternative was rejecting formats the app currently advertises as allowed.
+- **Uploads are decoded twice** (once for the web image, once for the thumbnail) so that
+  Thumbnailator applies EXIF orientation from the original bytes. Phone photos are
+  routinely stored sideways with the rotation only in metadata. Costs CPU on an
+  admin-only path; worth it. **This is the one part not directly verified** — the test
+  photos carry no EXIF orientation tag, so rotation handling is reasoned from
+  Thumbnailator's stream-input behaviour, not observed.
+- **Decode memory is bounded by a 60MP header check**, not by the 8MB file limit — a
+  small file can still decode to a huge bitmap.
+
 ## Known issues found but deliberately not fixed
 
 - **Create responses return `null` timestamps.** `POST /api/admin/products` returns `createdAt`/`updatedAt` as null although the database has them set — the DTO is built before the flush.
+- **A malformed admin request returns 403 with an empty body.** Confirmed again during
+  A2 verification: a bad enum value produced a 400, which re-dispatches to `/error`,
+  which `anyRequest().denyAll()` rejects as 403. It cost real debugging time here —
+  the response gives no hint that the problem is the request body. Same root cause as
+  the 404 note below.
 - **Missing uploads return 401, not 404.** A 404 re-dispatches to `/error`, which `anyRequest().denyAll()` rejects. Likely affects every 404 on public routes and makes real debugging confusing.
 
 ---
@@ -73,3 +100,14 @@ mostly on mobile.
 - **`timeout` does not exist on macOS.** Background the process and `kill` instead.
 - **Always `mvn clean verify`** — stale `target/` output has already produced one false failure.
 - **Never bind 5432 or 8080** in verification stacks; the user runs Postgres and the backend locally.
+- **MinIO makes the S3 path locally verifiable.** A throwaway compose stack with
+  `minio/minio` plus a `minio/mc` init container to create the bucket, and
+  `S3_ENDPOINT` pointed at it, exercises `S3StorageService` against a real S3 API
+  rather than mocks. It confirmed key prefixes, `Cache-Control`, and that removing an
+  image deletes both objects. Note `minio/mc` needs `--entrypoint /bin/sh` to run a
+  shell.
+- **To see the frontend against a throwaway backend**, the Vite proxy target is
+  hardcoded to 8080 in `vite.config.ts`. A temporary config file inside `frontend/`
+  (it must live there to resolve `node_modules`) run with `npx vite --config` works —
+  delete it afterwards. Playwright is installed and drives the browser;
+  `chromium-cli` is not available.

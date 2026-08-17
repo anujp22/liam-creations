@@ -14,9 +14,9 @@ origin; three path patterns are routed to the ALB in front of the backend.
                     └───────┬──────────────┘
                             │
         default ────────────┼──────────▶ S3 bucket (SPA build output)
+        /uploads/*  ────────┼──────────▶ S3 bucket (product photos)
         /api/*      ────────┤
-        /uploads/*  ────────┼──────────▶ ALB ──▶ backend container ──▶ RDS Postgres
-        /sitemap.xml ───────┘
+        /sitemap.xml ───────┼──────────▶ ALB ──▶ backend container ──▶ RDS Postgres
 ```
 
 Because everything shares one origin, the browser never makes a cross-origin request
@@ -28,7 +28,7 @@ development and as a safety net.
 | Path pattern   | Origin | Cache | Notes |
 |----------------|--------|-------|-------|
 | `/api/*`       | ALB    | **Disabled** | Must forward `Authorization`, and all methods (GET/POST/PUT/PATCH/DELETE). Caching these will serve one customer's data to another. |
-| `/uploads/*`   | ALB    | Enabled, long TTL | Filenames are UUIDs and never rewritten, so they are safe to cache aggressively. |
+| `/uploads/*`   | **S3 (photos)** | Enabled, long TTL | Product photos, written by the backend and read straight from the bucket — they do not pass through the ALB. Filenames are UUIDs and never rewritten, and the backend sets a one-year immutable `Cache-Control`. |
 | `/sitemap.xml` | ALB    | Short TTL | Fixes the storefront 404 described in A6. |
 | `default (*)`  | S3     | Enabled | SPA assets. |
 
@@ -55,13 +55,30 @@ Cross-checked against `application-prod.properties` and `application.properties`
 | `ADMIN_PASSWORD` | — | From Secrets Manager. Must not be `admin123`; A13 adds a startup guard for this. |
 | `CORS_ALLOWED_ORIGIN_PROD` | `https://shop.example.com` | The CloudFront domain. Scheme included, no trailing slash. |
 | `PUBLIC_BASE_URL` | `https://shop.example.com` | Used to build absolute sitemap URLs. **Defaults to `http://localhost:5173`** — if unset, the live sitemap advertises localhost URLs to Google. |
+| `S3_BUCKET` | `liams-catalog-photos` | Bucket holding product photos. No default — the app will not start without it, which is deliberate: uploads that silently vanish on the next deploy are worse than a failed boot. |
+| `S3_REGION` | `ap-south-1` | Bucket region. |
+
+### Photo bucket setup
+
+The backend writes photos but never serves them, so the bucket has to be readable by
+CloudFront. Two things to get right:
+
+1. **Do not make the bucket public.** Use CloudFront Origin Access Control and a bucket
+   policy that allows only that distribution to read. The backend needs
+   `s3:PutObject` and `s3:DeleteObject` on `<bucket>/products/*` through its task role
+   — not access keys in environment variables.
+2. **Turn on versioning** if you want a deleted photo to be recoverable. Removing an
+   image from a product deletes the object, and that is not undoable otherwise.
 
 ### Optional
 
 | Variable | Default | Notes |
 |----------|---------|-------|
 | `TRUSTED_PROXY_COUNT` | `2` | Proxies in front of the app: CloudFront + ALB. Set to `1` if CloudFront is removed. Wrong value either collapses all visitors into one rate-limit bucket or lets clients forge the address we key on. |
-| `APP_UPLOADS_DIR` | `uploads` | Container-local path. **Ephemeral** — wiped on every deploy until S3 storage (A2) lands. |
+| `APP_STORAGE` | `s3` in prod | `local` writes into the container and is **ephemeral** — dev only. |
+| `APP_UPLOADS_DIR` | `uploads` | Container-local path. Only used when `APP_STORAGE=local`. |
+| `S3_KEY_PREFIX` | `products/` | Key prefix inside the photo bucket. |
+| `S3_PUBLIC_URL_PREFIX` | `/uploads/` | Relative on purpose, so no CDN domain is baked into the database. Only set this to an absolute CDN origin if you accept that changing that domain later invalidates every stored image URL. |
 
 ## Deploy sequence
 
@@ -101,7 +118,6 @@ rather than anything destructive in the same deploy as the code that needs it.
 
 These are tracked and not yet done:
 
-- **Uploads are container-local** and wiped on every deploy (A2, S3 storage).
 - **No HTTPS/HSTS enforcement** in the app itself (A15).
 - **No automated database backups** configured beyond the manual snapshot above (A15).
 - **No log aggregation or uptime monitoring** wired up (A15). `RequestLoggingFilter`
