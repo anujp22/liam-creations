@@ -4,6 +4,7 @@ import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -13,24 +14,28 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Set;
-import java.util.UUID;
 
-/** Stores uploaded images on the local filesystem and serves them under /uploads/**. */
+/**
+ * Stores uploaded images on the local filesystem and serves them under /uploads/**.
+ *
+ * <p>Default for development. Files written here live inside the container and are lost
+ * on every deploy, so production sets {@code app.storage=s3} to use
+ * {@link S3StorageService} instead.
+ */
 @Service
+@ConditionalOnProperty(name = "app.storage", havingValue = "local", matchIfMissing = true)
 public class LocalStorageService implements StorageService {
 
     private static final Logger log = LoggerFactory.getLogger(LocalStorageService.class);
     private static final String URL_PREFIX = "/uploads/";
 
-    private static final Set<String> ALLOWED_TYPES =
-            Set.of("image/jpeg", "image/png", "image/webp", "image/gif");
-    private static final long MAX_BYTES = 8L * 1024 * 1024; // 8 MB
-
     private final Path root;
+    private final ImageProcessor imageProcessor;
 
-    public LocalStorageService(@Value("${app.uploads.dir:uploads}") String uploadsDir) {
+    public LocalStorageService(@Value("${app.uploads.dir:uploads}") String uploadsDir,
+                               ImageProcessor imageProcessor) {
         this.root = Paths.get(uploadsDir).toAbsolutePath().normalize();
+        this.imageProcessor = imageProcessor;
     }
 
     @PostConstruct
@@ -44,39 +49,36 @@ public class LocalStorageService implements StorageService {
 
     @Override
     public String store(MultipartFile file) {
-        if (file == null || file.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Empty file");
-        }
-        if (file.getSize() > MAX_BYTES) {
-            throw new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE, "File exceeds 8 MB");
-        }
-        String contentType = file.getContentType();
-        if (contentType == null || !ALLOWED_TYPES.contains(contentType)) {
-            throw new ResponseStatusException(HttpStatus.UNSUPPORTED_MEDIA_TYPE,
-                    "Only JPEG, PNG, WEBP or GIF images are allowed");
-        }
-
-        String filename = UUID.randomUUID() + extensionFor(contentType);
-        Path target = root.resolve(filename).normalize();
-        if (!target.startsWith(root)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid file path");
-        }
-        try {
-            file.transferTo(target);
-        } catch (IOException e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to store file", e);
-        }
-        return URL_PREFIX + filename;
+        ImageVariants variants = imageProcessor.process(file);
+        write(variants.web());
+        write(variants.thumb());
+        return URL_PREFIX + variants.web().filename();
     }
 
     @Override
     public void delete(String url) {
+        deleteOne(url);
+        deleteOne(ImageVariants.thumbUrlFor(url));
+    }
+
+    private void write(ImageVariants.ImageFile image) {
+        Path target = resolveInsideRoot(image.filename());
+        if (target == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid file path");
+        }
+        try {
+            Files.write(target, image.bytes());
+        } catch (IOException e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to store file", e);
+        }
+    }
+
+    private void deleteOne(String url) {
         if (url == null || !url.startsWith(URL_PREFIX)) {
             return; // null, blank, or an external URL — nothing we own to remove
         }
-        String filename = url.substring(URL_PREFIX.length());
-        Path target = root.resolve(filename).normalize();
-        if (!target.startsWith(root)) {
+        Path target = resolveInsideRoot(url.substring(URL_PREFIX.length()));
+        if (target == null) {
             log.warn("Refusing to delete file outside uploads root: {}", url);
             return;
         }
@@ -87,12 +89,9 @@ public class LocalStorageService implements StorageService {
         }
     }
 
-    private String extensionFor(String contentType) {
-        return switch (contentType) {
-            case "image/png" -> ".png";
-            case "image/webp" -> ".webp";
-            case "image/gif" -> ".gif";
-            default -> ".jpg";
-        };
+    /** Resolves a filename under the uploads root, or null if it would escape it. */
+    private Path resolveInsideRoot(String filename) {
+        Path target = root.resolve(filename).normalize();
+        return target.startsWith(root) ? target : null;
     }
 }
