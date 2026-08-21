@@ -41,7 +41,8 @@ None of them block further development; all of them block launch.
    give me a contact address for data requests — it is a `REPLACE-ME@example.com`
    placeholder today.
 6. **Confirm `VITE_OWNER_WHATSAPP`** is the real business number.
-7. **Decide A12** — the memo is written: `docs/ADMIN_AUTH_OPTIONS.md`.
+7. ~~Decide A12~~ — **decided 2026-08-21: Option 3, HttpOnly session cookie.** Build it
+   at handover, not before. See below.
 
 ---
 
@@ -62,7 +63,7 @@ None of them block further development; all of them block launch.
 | **A13** | Production would inherit the shipped `admin/admin123` if `ADMIN_PASSWORD` was forgotten, and boot looking healthy. `AdminCredentialsValidator` now refuses to start on a blank, well-known, too-short, or username-matching password. Written as an `EnvironmentPostProcessor`, not a bean — see below. |
 | **Orders** | New feature, agreed in the decision table. Entity + `V14`, order codes from a sequence, capture on the WhatsApp handoff, admin Orders screen. See its own section below. |
 | **A14** | No index on `products` beyond the primary key. Five partial indexes added in a Postgres-only migration, each chosen by measurement. See below. |
-| **A12** | **Memo written, no code** — `docs/ADMIN_AUTH_OPTIONS.md`. Awaiting your decision. |
+| **A12** | **Decided, deliberately not built.** Option 3 (HttpOnly server-side session cookie) chosen 2026-08-21. Memo: `docs/ADMIN_AUTH_OPTIONS.md`. |
 | **Privacy policy** | Written and routed at `/privacy`, linked from the footer and the checkout form. Copy is a draft pending your review. |
 | **Frontend tests** | There were none; the only gate was `tsc && vite build`. Vitest + Testing Library added, wired into CI. 28 tests. |
 | — | `PUBLIC_BASE_URL` had no prod value, so the live sitemap would have advertised `localhost` URLs. Now required. |
@@ -82,7 +83,12 @@ None of them block further development; all of them block launch.
 
 **Blocked on you**
 
-- **A12** — pick an option from the memo.
+- **A12 — implement Option 3 at handover.** The decision is made; the work is deferred
+  on purpose, because dev deliberately keeps `admin`/`admin123` and A13 already blocks
+  those in prod only. When it is built: **CSRF must be re-enabled for admin routes** —
+  currently disabled, which is fine for header auth and unsafe for cookies. That is the
+  part to test hardest. Note it is buildable locally whenever you want: `Secure` cookies
+  work on `localhost`, and single-origin routing is already settled.
 - The privacy policy contact address.
 
 ---
