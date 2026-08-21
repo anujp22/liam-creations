@@ -1,0 +1,5 @@
+# A13: reject the development admin credentials in production before any bean is
+# created — in particular before Flyway opens a database connection, so the startup
+# failure names the real problem instead of surfacing as a connection error.
+org.springframework.boot.env.EnvironmentPostProcessor=\
+com.codewithanuj.catalog.shared.config.AdminCredentialsValidator

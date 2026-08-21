@@ -51,12 +51,22 @@ Cross-checked against `application-prod.properties` and `application.properties`
 | `DB_URL` | `jdbc:postgresql://catalog.xxxx.rds.amazonaws.com:5432/instagram_catalog` | |
 | `DB_USERNAME` | `catalog_user` | |
 | `DB_PASSWORD` | — | From Secrets Manager. Never in a task definition literal. |
-| `ADMIN_USERNAME` | — | |
-| `ADMIN_PASSWORD` | — | From Secrets Manager. Must not be `admin123`; A13 adds a startup guard for this. |
+| `ADMIN_USERNAME` | — | Must be set. The app refuses to start without it. |
+| `ADMIN_PASSWORD` | — | From Secrets Manager. **Enforced at startup** by `AdminCredentialsValidator`: at least 12 characters, not a well-known default such as `admin123`, and not equal to `ADMIN_USERNAME`. The app refuses to start otherwise — see below. |
 | `CORS_ALLOWED_ORIGIN_PROD` | `https://shop.example.com` | The CloudFront domain. Scheme included, no trailing slash. |
 | `PUBLIC_BASE_URL` | `https://shop.example.com` | Used to build absolute sitemap URLs. **Defaults to `http://localhost:5173`** — if unset, the live sitemap advertises localhost URLs to Google. |
 | `S3_BUCKET` | `liams-catalog-photos` | Bucket holding product photos. No default — the app will not start without it, which is deliberate: uploads that silently vanish on the next deploy are worse than a failed boot. |
 | `S3_REGION` | `ap-south-1` | Bucket region. |
+
+### If the container will not start and the logs say "Refusing to start"
+
+That is `AdminCredentialsValidator` (A13) doing its job, not a bug. The message names
+the variable to fix. It runs before Flyway opens a database connection, so this failure
+appears on its own without a database stack trace on top of it.
+
+Note that the guard only applies when `SPRING_PROFILES_ACTIVE=prod`. A deployment that
+forgets that variable gets dev defaults *including* `admin/admin123`, and nothing will
+complain — which is why `SPRING_PROFILES_ACTIVE` is first in the table above.
 
 ### Photo bucket setup
 
