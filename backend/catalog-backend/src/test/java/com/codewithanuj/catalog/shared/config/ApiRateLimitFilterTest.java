@@ -39,6 +39,44 @@ class ApiRateLimitFilterTest {
         return response;
     }
 
+    private MockHttpServletResponse placeOrder(String ip) throws ServletException, IOException {
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/orders");
+        request.setRemoteAddr(ip);
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        filter.doFilter(request, response, new MockFilterChain());
+        return response;
+    }
+
+    @Test
+    void allowsUpToFiveOrdersThenReturns429() throws Exception {
+        // Unauthenticated and it writes personal data, so it gets the review limit.
+        for (int i = 1; i <= 5; i++) {
+            assertThat(placeOrder("9.9.9.9").getStatus()).isNotEqualTo(429);
+        }
+        assertThat(placeOrder("9.9.9.9").getStatus()).isEqualTo(429);
+    }
+
+    @Test
+    void orderAndReviewLimitsAreCountedSeparately() throws Exception {
+        // Sharing a bucket would mean leaving a review used up an order attempt.
+        for (int i = 1; i <= 5; i++) {
+            placeOrder("8.8.8.8");
+        }
+        assertThat(placeOrder("8.8.8.8").getStatus()).isEqualTo(429);
+        assertThat(submitReview("8.8.8.8").getStatus())
+                .as("a used-up order bucket must not block reviews from the same visitor")
+                .isNotEqualTo(429);
+    }
+
+    @Test
+    void oneVisitorsOrdersDoNotUseUpAnothersAllowance() throws Exception {
+        for (int i = 1; i <= 5; i++) {
+            placeOrder("7.7.7.7");
+        }
+        assertThat(placeOrder("7.7.7.7").getStatus()).isEqualTo(429);
+        assertThat(placeOrder("7.7.7.8").getStatus()).isNotEqualTo(429);
+    }
+
     @Test
     void allowsUpToFiveReviewSubmitsThenReturns429() throws Exception {
         for (int i = 1; i <= 5; i++) {

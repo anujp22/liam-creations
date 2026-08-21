@@ -34,6 +34,13 @@ public class ApiRateLimitFilter extends OncePerRequestFilter {
 
     private static final int ADMIN_PER_MINUTE = 60;
     private static final int REVIEW_PER_MINUTE = 5;
+    /**
+     * Orders are unauthenticated and persist a name, phone, email and address, which
+     * makes this the costliest route to leave open. A real customer places one order and
+     * occasionally retries; five a minute is generous for that and useless for filling
+     * the table with junk.
+     */
+    private static final int ORDER_PER_MINUTE = 5;
 
     private final Cache<String, Bucket> buckets = Caffeine.newBuilder()
             .expireAfterAccess(Duration.ofMinutes(10))
@@ -59,6 +66,8 @@ public class ApiRateLimitFilter extends OncePerRequestFilter {
             bucket = bucketFor("admin:" + ip, ADMIN_PER_MINUTE);
         } else if (isReviewSubmit(request, uri)) {
             bucket = bucketFor("review:" + ip, REVIEW_PER_MINUTE);
+        } else if (isOrderSubmit(request, uri)) {
+            bucket = bucketFor("order:" + ip, ORDER_PER_MINUTE);
         } else {
             chain.doFilter(request, response);
             return;
@@ -73,6 +82,10 @@ public class ApiRateLimitFilter extends OncePerRequestFilter {
                     {"status":429,"error":"Too Many Requests","message":"Rate limit exceeded. Please try again shortly."}
                     """);
         }
+    }
+
+    private boolean isOrderSubmit(HttpServletRequest request, String uri) {
+        return "POST".equals(request.getMethod()) && "/api/orders".equals(uri);
     }
 
     private boolean isReviewSubmit(HttpServletRequest request, String uri) {

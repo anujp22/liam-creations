@@ -69,11 +69,13 @@ public class SecurityConfig {
                 boolean isGet = "GET".equals(request.getMethod());
                 boolean isReviewSubmit = "POST".equals(request.getMethod())
                         && path.startsWith("/api/products/") && path.endsWith("/reviews");
+                boolean isOrderSubmit = "POST".equals(request.getMethod()) && path.equals("/api/orders");
                 return (isGet && path.startsWith("/api/products"))
                         || (isGet && path.startsWith("/api/reviews"))
                         || (isGet && path.startsWith("/uploads/"))
                         || (isGet && path.equals("/sitemap.xml"))
                         || isReviewSubmit
+                        || isOrderSubmit
                         || path.equals("/actuator/health");
             }
         };
@@ -97,6 +99,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/sitemap.xml").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/products", "/api/products/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/products/*/reviews").permitAll()
+                        // Placing an order is public: there are no customer accounts, so
+                        // requiring a login here would mean requiring one to buy anything.
+                        // Rate-limited in ApiRateLimitFilter, which runs before this.
+                        .requestMatchers(HttpMethod.POST, "/api/orders").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/reviews/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
