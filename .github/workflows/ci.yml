@@ -57,7 +57,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      # Runs `tsc -b && vite build`. Until the frontend has tests, this is the
-      # only correctness gate it has.
+      - name: Test
+        run: npm test
+
+      # Runs `tsc -b && vite build`.
       - name: Build
         run: npm run build
