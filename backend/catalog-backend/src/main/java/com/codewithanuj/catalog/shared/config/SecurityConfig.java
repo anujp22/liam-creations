@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.web.config.EnableSpringDataWebSupport;
+import jakarta.servlet.DispatcherType;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -82,6 +83,16 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        // Spring registers this filter chain for the ERROR dispatch as well as
+                        // REQUEST. Without this line the internal re-dispatch to /error falls
+                        // through to denyAll() below and the security layer overwrites whatever
+                        // the app decided: a 400 from a bad request body reached the client as a
+                        // 403 with an empty body, a 405 as a 403, and a missing upload as a 401.
+                        // Verified against a running stack — the access log showed the true 400
+                        // while curl received 403. ERROR is an internal dispatch type that no
+                        // client can ask for, so permitting it grants no outside access; the
+                        // response body is still whatever the handler chose to render.
+                        .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                         .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers(HttpMethod.GET, "/sitemap.xml").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/products", "/api/products/**").permitAll()

@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -82,6 +83,48 @@ class ValidationExceptionHandlerTest {
                         .content(body))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value(containsString("title")));
+    }
+
+    @Test
+    void namesTheFieldAndTheAcceptedValuesWhenAnEnumIsWrong() throws Exception {
+        // Jackson rejects this before the controller runs, so @Valid never sees it.
+        // Previously this produced a 400 with no message at all — and once the security
+        // chain had rewritten the error dispatch, a 403 with no body.
+        String body = """
+                {
+                  "title": "Clay Mug",
+                  "description": "Nice mug",
+                  "price": 24.99,
+                  "currency": "INR",
+                  "status": "IN_STOCK",
+                  "category": "NOT_A_CATEGORY",
+                  "featured": true
+                }
+                """;
+
+        mockMvc.perform(post("/test/products")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(containsString("category")))
+                .andExpect(jsonPath("$.message").value(containsString("NOT_A_CATEGORY")))
+                .andExpect(jsonPath("$.message").value(containsString("BRIDAL_SAREES")));
+    }
+
+    @Test
+    void explainsThatTheBodyIsUnreadableWhenTheJsonIsMalformed() throws Exception {
+        mockMvc.perform(post("/test/products")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{not json"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(containsString("valid JSON")));
+    }
+
+    @Test
+    void reportsTheSupportedMethodsOnTheWrongVerb() throws Exception {
+        mockMvc.perform(get("/test/products"))
+                .andExpect(status().isMethodNotAllowed())
+                .andExpect(jsonPath("$.message").value(containsString("POST")));
     }
 
     @Test
