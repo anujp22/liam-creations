@@ -6,6 +6,7 @@ import { updateProduct } from '../../api/admin';
 import { formatINR } from '../../utils/money';
 import { invalidateProductData, useProducts } from '../../hooks/useProducts';
 import { useTitle } from '../../hooks/useTitle';
+import { Thumb } from '../../components/Thumb';
 
 export function AdminOnSale() {
   const [busy, setBusy] = useState<string | null>(null);
@@ -64,7 +65,7 @@ export function AdminOnSale() {
             <div key={p.productNumber} className={`admin-row admin-row--onsale${busy === p.productNumber ? ' admin-row--busy' : ''}`}>
               <span className="admin-cell-product">
                 {p.imageUrl
-                  ? <img src={p.imageUrl} alt="" className="admin-thumb" />
+                  ? <Thumb src={p.imageUrl} alt="" className="admin-thumb" />
                   : <span className="admin-thumb admin-thumb--empty" />}
                 <span className="admin-cell-text">
                   <span className="admin-cell-name">{p.title}</span>

@@ -21,6 +21,18 @@
         <java.version>17</java.version>
     </properties>
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>bom</artifactId>
+                <version>2.28.29</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -63,6 +75,19 @@
         <dependency>
             <groupId>com.github.ben-manes.caffeine</groupId>
             <artifactId>caffeine</artifactId>
+        </dependency>
+        <!-- Downscales the 3-8MB phone photos the owner uploads. Without it a product
+             page is 20-40MB, which is fatal on mobile data. -->
+        <dependency>
+            <groupId>net.coobird</groupId>
+            <artifactId>thumbnailator</artifactId>
+            <version>0.4.20</version>
+        </dependency>
+        <!-- Product photos live in S3, not in the container filesystem, so they survive
+             a deploy and stay portable across whichever host we end up on. -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>s3</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>

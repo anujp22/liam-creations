@@ -116,7 +116,7 @@ class ProductRepositoryTest {
                 new BigDecimal("2499.00"), "INR", ProductStatus.IN_STOCK, false, null, ProductCategory.WEDDING_DECOR
         ));
 
-        Page<Product> result = productRepository.findFiltered(null, null, "silk", PageRequest.of(0, 20));
+        Page<Product> result = productRepository.findFiltered(null, null, "silk", false, PageRequest.of(0, 20));
 
         assertThat(result.getTotalElements()).isEqualTo(1);
         assertThat(result.getContent().get(0).getProductNumber()).isEqualTo("PRD-001");
@@ -133,7 +133,7 @@ class ProductRepositoryTest {
                 new BigDecimal("500.00"), "INR", ProductStatus.IN_STOCK, false, null, ProductCategory.WEDDING_DECOR
         ));
 
-        Page<Product> result = productRepository.findFiltered(null, null, "turmeric", PageRequest.of(0, 20));
+        Page<Product> result = productRepository.findFiltered(null, null, "turmeric", false, PageRequest.of(0, 20));
 
         assertThat(result.getTotalElements()).isEqualTo(1);
         assertThat(result.getContent().get(0).getProductNumber()).isEqualTo("PRD-001");
@@ -150,10 +150,68 @@ class ProductRepositoryTest {
                 new BigDecimal("2000.00"), "INR", ProductStatus.OUT_OF_STOCK, false, null, ProductCategory.WEDDING_DECOR
         ));
 
-        Page<Product> result = productRepository.findFiltered(ProductStatus.IN_STOCK, null, "saree", PageRequest.of(0, 20));
+        Page<Product> result = productRepository.findFiltered(ProductStatus.IN_STOCK, null, "saree", false, PageRequest.of(0, 20));
 
         assertThat(result.getTotalElements()).isEqualTo(1);
         assertThat(result.getContent().get(0).getProductNumber()).isEqualTo("PRD-001");
+    }
+
+    @Test
+    void findFilteredOnSaleStillHonoursCategory() {
+        Product saleSaree = new Product(
+                "PRD-001", "Banarasi Saree", "Desc",
+                new BigDecimal("22000.00"), "INR", ProductStatus.IN_STOCK, false, null, ProductCategory.BRIDAL_SAREES
+        );
+        saleSaree.setSalePrice(new BigDecimal("19000.00"));
+        productRepository.save(saleSaree);
+
+        Product saleDecor = new Product(
+                "PRD-002", "Haldi Decor Set", "Desc",
+                new BigDecimal("2499.00"), "INR", ProductStatus.IN_STOCK, false, null, ProductCategory.WEDDING_DECOR
+        );
+        saleDecor.setSalePrice(new BigDecimal("1999.00"));
+        productRepository.save(saleDecor);
+
+        Page<Product> result = productRepository.findFiltered(
+                null, ProductCategory.BRIDAL_SAREES, "", true, PageRequest.of(0, 20));
+
+        assertThat(result.getTotalElements()).isEqualTo(1);
+        assertThat(result.getContent().get(0).getProductNumber()).isEqualTo("PRD-001");
+    }
+
+    @Test
+    void findFilteredOnSaleExcludesProductsWithoutASalePrice() {
+        Product onSale = new Product(
+                "PRD-001", "Banarasi Saree", "Desc",
+                new BigDecimal("22000.00"), "INR", ProductStatus.IN_STOCK, false, null, ProductCategory.BRIDAL_SAREES
+        );
+        onSale.setSalePrice(new BigDecimal("19000.00"));
+        productRepository.save(onSale);
+        productRepository.save(new Product(
+                "PRD-002", "Kanjeevaram Saree", "Desc",
+                new BigDecimal("18500.00"), "INR", ProductStatus.IN_STOCK, false, null, ProductCategory.BRIDAL_SAREES
+        ));
+
+        Page<Product> result = productRepository.findFiltered(null, null, "", true, PageRequest.of(0, 20));
+
+        assertThat(result.getTotalElements()).isEqualTo(1);
+        assertThat(result.getContent().get(0).getProductNumber()).isEqualTo("PRD-001");
+    }
+
+    @Test
+    void findFilteredWithNoFiltersReturnsEveryActiveProduct() {
+        productRepository.save(new Product(
+                "PRD-001", "Kanjeevaram Saree", "Desc",
+                new BigDecimal("18500.00"), "INR", ProductStatus.IN_STOCK, false, null, ProductCategory.BRIDAL_SAREES
+        ));
+        productRepository.save(new Product(
+                "PRD-002", "Haldi Decor Set", "Desc",
+                new BigDecimal("2499.00"), "INR", ProductStatus.OUT_OF_STOCK, false, null, ProductCategory.WEDDING_DECOR
+        ));
+
+        Page<Product> result = productRepository.findFiltered(null, null, "", false, PageRequest.of(0, 20));
+
+        assertThat(result.getTotalElements()).isEqualTo(2);
     }
 
     @Test

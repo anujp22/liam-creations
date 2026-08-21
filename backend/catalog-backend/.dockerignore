@@ -1,0 +1,19 @@
+# Build output — the image builds from source inside the build stage.
+target/
+
+# Local uploads must never be baked into an image.
+uploads/
+
+# IDE / OS noise
+.idea/
+*.iml
+.DS_Store
+
+# Secrets must arrive as environment variables at runtime, never in a layer.
+.env
+.env.*
+
+# Docs and git metadata are irrelevant to the build and only bust the cache.
+.git/
+.gitignore
+*.md

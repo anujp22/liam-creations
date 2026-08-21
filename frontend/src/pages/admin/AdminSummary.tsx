@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { formatINR } from '../../utils/money';
 import { useMetrics, useProducts } from '../../hooks/useProducts';
 import { useTitle } from '../../hooks/useTitle';
+import { Thumb } from '../../components/Thumb';
 
 export function AdminSummary() {
   useTitle('Admin Summary');
@@ -49,7 +50,7 @@ export function AdminSummary() {
             {recent.map((p) => (
               <Link key={p.productNumber} to={`/admin/products/${p.productNumber}/edit`} className="admin-recent-row">
                 {p.imageUrl
-                  ? <img src={p.imageUrl} alt="" className="admin-thumb" />
+                  ? <Thumb src={p.imageUrl} alt="" className="admin-thumb" />
                   : <span className="admin-thumb admin-thumb--empty" />}
                 <span className="admin-recent-name">{p.title}</span>
                 <span className="admin-recent-num">{p.productNumber}</span>

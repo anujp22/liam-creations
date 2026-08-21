@@ -621,6 +621,28 @@
   }
 }
 
+/* Shown when a cart item was taken down since it was added. Uses the muted
+   surface rather than an error red: this is expected housekeeping, not a fault. */
+.cart-unavailable-note {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-muted, rgba(0, 0, 0, 0.03));
+  color: var(--text-muted, var(--text));
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.cart-empty .cart-unavailable-note {
+  align-items: center;
+  text-align: center;
+}
+
 .cart-heading {
   display: flex;
   align-items: center;
@@ -1953,3 +1975,231 @@
 @media (min-width: 1560px) {
   .our-story-note { display: block; }
 }
+
+/* ── Admin: Orders ───────────────────────────────────────────────────── */
+
+.admin-orders-tabs { margin-bottom: 20px; }
+
+.admin-order-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.admin-order {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg);
+  overflow: hidden;
+}
+
+/* The whole header row is the disclosure control, so it has to be a button.
+   Grid rather than flex so the columns line up down the list. */
+.admin-order-head {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 6.5rem 7rem 1fr auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: none;
+  border: none;
+  font: inherit;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.admin-order-head:hover { background: var(--blush-soft); }
+
+.admin-order-code {
+  font-weight: 600;
+  color: var(--text-h);
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-order-status {
+  justify-self: start;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border: 1px solid var(--border);
+  background: var(--blush-soft);
+}
+
+/* Only the two states the owner needs to spot at a glance get a colour: work to
+   do, and work that will never happen. The middle of the lifecycle stays neutral
+   so the list does not turn into a rainbow. */
+.admin-order-status--new {
+  color: var(--warning);
+  border-color: color-mix(in srgb, var(--warning) 40%, transparent);
+  background: color-mix(in srgb, var(--warning) 10%, transparent);
+}
+
+.admin-order-status--delivered {
+  color: var(--success);
+  border-color: color-mix(in srgb, var(--success) 40%, transparent);
+  background: color-mix(in srgb, var(--success) 10%, transparent);
+}
+
+.admin-order-status--cancelled {
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 40%, transparent);
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+}
+
+.admin-order-customer {
+  color: var(--text-h);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-order-total {
+  font-weight: 600;
+  color: var(--text-h);
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-order-date {
+  font-size: 0.82rem;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.admin-order-body {
+  padding: 4px 16px 18px;
+  border-top: 1px solid var(--border);
+}
+
+.admin-order-contact p { margin: 8px 0; }
+.admin-order-contact a { color: var(--accent-dark); }
+
+.admin-order-items {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0 6px;
+  font-size: 0.92rem;
+}
+
+.admin-order-items th,
+.admin-order-items td {
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.admin-order-items th:not(:first-child),
+.admin-order-items td:not(:first-child) {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.admin-order-items tfoot td {
+  font-weight: 600;
+  color: var(--text-h);
+  border-bottom: none;
+}
+
+.admin-order-sku {
+  color: var(--text);
+  font-size: 0.8rem;
+  opacity: 0.75;
+}
+
+.admin-order-snapshot-note {
+  font-size: 0.82rem;
+  color: var(--text);
+  opacity: 0.8;
+  margin: 0 0 14px;
+}
+
+.admin-order-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-order-actions-label {
+  font-size: 0.85rem;
+  color: var(--text);
+  margin-right: 2px;
+}
+
+/* Below this the five-column header stops fitting; stack it instead of letting
+   the customer name and total collide. */
+@media (max-width: 720px) {
+  .admin-order-head {
+    grid-template-columns: 1fr auto;
+    row-gap: 6px;
+  }
+  .admin-order-customer { grid-column: 1 / -1; }
+  .admin-order-date { grid-column: 1 / -1; }
+}
+
+/* ── Cart: order saved confirmation ──────────────────────────────────── */
+
+.cart-order-placed {
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--success) 40%, transparent);
+  background: color-mix(in srgb, var(--success) 8%, transparent);
+  color: var(--text-h);
+  font-size: 0.92rem;
+}
+
+/* ── Legal pages (privacy policy) ────────────────────────────────────── */
+
+.legal-page {
+  max-width: 68ch;
+  margin: 0 auto;
+  line-height: 1.7;
+}
+
+.legal-title {
+  font-family: var(--heading);
+  font-size: 2.4rem;
+  color: var(--text-h);
+  margin: 0 0 4px;
+}
+
+.legal-updated {
+  color: var(--text);
+  font-size: 0.88rem;
+  margin: 0 0 28px;
+}
+
+.legal-page h2 {
+  font-family: var(--heading);
+  font-size: 1.5rem;
+  color: var(--text-h);
+  margin: 32px 0 8px;
+}
+
+.legal-page ul {
+  padding-left: 1.2rem;
+  margin: 8px 0;
+}
+
+.legal-page li { margin: 6px 0; }
+
+.legal-page a { color: var(--accent-dark); }
+
+.legal-back {
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.footer-privacy {
+  color: var(--text);
+  font-size: 0.85rem;
+  text-decoration: none;
+  margin-bottom: 6px;
+}
+
+.footer-privacy:hover { text-decoration: underline; }

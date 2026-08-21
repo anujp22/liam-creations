@@ -22,6 +22,8 @@ import java.util.Optional;
 @Service
 public class ProductService {
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(ProductService.class);
+
     private final ProductRepository productRepository;
     private final ProductNumberGenerator productNumberGenerator;
     private final com.codewithanuj.catalog.shared.storage.StorageService storageService;
@@ -36,23 +38,13 @@ public class ProductService {
 
     @Transactional(readOnly = true)
     public Page<ProductResponseDto> getProducts(ProductStatus status, ProductCategory category, String search, boolean onSale, Pageable pageable) {
-        if (onSale) {
-            return productRepository.findBySalePriceIsNotNullAndDeletedFalse(pageable).map(this::toDto);
-        }
-        String normalizedSearch = (search != null && !search.isBlank()) ? search.trim() : null;
-        if (normalizedSearch != null) {
-            return productRepository.findFiltered(status, category, normalizedSearch, pageable).map(this::toDto);
-        }
-        if (status != null && category != null) {
-            return productRepository.findByStatusAndCategoryAndDeletedFalse(status, category, pageable).map(this::toDto);
-        }
-        if (status != null) {
-            return productRepository.findByStatusAndDeletedFalse(status, pageable).map(this::toDto);
-        }
-        if (category != null) {
-            return productRepository.findByCategoryAndDeletedFalse(category, pageable).map(this::toDto);
-        }
-        return productRepository.findByDeletedFalse(pageable).map(this::toDto);
+        // One query handles every combination. The previous version returned early for
+        // onSale and dropped status/category/search on the floor, so "sale + category"
+        // silently returned the whole sale list.
+        // Empty string, not null: an untyped null parameter makes Postgres reject
+        // LOWER(?) at runtime. See the note on findFiltered.
+        String normalizedSearch = (search != null && !search.isBlank()) ? search.trim() : "";
+        return productRepository.findFiltered(status, category, normalizedSearch, onSale, pageable).map(this::toDto);
     }
 
     @Transactional(readOnly = true)
@@ -112,15 +104,11 @@ public class ProductService {
                         "Product not found: " + productNumber));
 
         // Gather every stored image (gallery + primary thumbnail) before the row goes.
-        java.util.Set<String> urls = new java.util.LinkedHashSet<>(product.getImages());
-        if (product.getImageUrl() != null) {
-            urls.add(product.getImageUrl());
-        }
+        java.util.Set<String> urls = referencedUrls(product);
 
         productRepository.delete(product);
 
-        // Best-effort file cleanup; failures here must not fail the delete.
-        urls.forEach(storageService::delete);
+        deleteQuietly(urls);
     }
 
     @Transactional
@@ -157,12 +145,25 @@ public class ProductService {
         product.setCurrency(request.currency());
         product.setStatus(request.status());
         product.setFeatured(request.featured());
-        product.setImageUrl(request.imageUrl());
         product.setCategory(request.category());
         product.setSalePrice(request.salePrice());
+
+        // Snapshot what the product referenced before the update, so files that are no
+        // longer referenced afterwards can be removed. Without this every photo the owner
+        // removes from a product leaks its file forever.
+        java.util.Set<String> before = referencedUrls(product);
+
+        product.setImageUrl(request.imageUrl());
         applyImages(product, request.images());
 
-        return toDto(productRepository.save(product));
+        ProductResponseDto saved = toDto(productRepository.save(product));
+
+        // Only delete what is genuinely unreferenced now — a URL kept in the new gallery,
+        // or still used as the primary imageUrl, must survive.
+        before.removeAll(referencedUrls(product));
+        deleteQuietly(before);
+
+        return saved;
     }
 
     @Transactional
@@ -202,6 +203,26 @@ public class ProductService {
                 // LazyInitializationException (open-in-view is disabled).
                 new java.util.ArrayList<>(product.getImages())
         );
+    }
+
+    /** Every stored file this product currently points at: gallery images plus the thumbnail. */
+    private java.util.Set<String> referencedUrls(Product product) {
+        java.util.Set<String> urls = new java.util.LinkedHashSet<>(product.getImages());
+        if (product.getImageUrl() != null) {
+            urls.add(product.getImageUrl());
+        }
+        return urls;
+    }
+
+    /** Best-effort file cleanup: storage problems must never fail the surrounding write. */
+    private void deleteQuietly(java.util.Collection<String> urls) {
+        for (String url : urls) {
+            try {
+                storageService.delete(url);
+            } catch (RuntimeException ex) {
+                log.warn("Could not delete unreferenced image {}: {}", url, ex.toString());
+            }
+        }
     }
 
     /** Stores the gallery and keeps the primary imageUrl in sync with the first image. */

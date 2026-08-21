@@ -1,0 +1,60 @@
+# Local development stack: Postgres + backend.
+#
+# The frontend is intentionally not here — it runs via `npm run dev` so you keep
+# hot reload, and its Vite proxy already forwards /api and /uploads to :8080.
+#
+#   docker compose up --build
+#
+# This runs the DEV profile, so Flyway loads classpath:db/seed and you get the
+# 100 demo products. Production pins spring.flyway.locations to db/migration only.
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: instagram_catalog
+      POSTGRES_USER: catalog_user
+      POSTGRES_PASSWORD: catalog_password
+    ports:
+      # Exposed so you can also point IntelliJ or psql at it directly.
+      # If you already run Postgres locally on 5432 this bind will fail — stop the
+      # local server, or change this to "5433:5432" and adjust DB_URL accordingly.
+      - "5432:5432"
+    volumes:
+      - catalog-db-data:/var/lib/postgresql/data
+    healthcheck:
+      # The backend waits on this; without it Flyway races the database's first boot.
+      test: ["CMD-SHELL", "pg_isready -U catalog_user -d instagram_catalog"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend/catalog-backend
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # 'db' is the compose service name, resolved on the compose network.
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/instagram_catalog
+      SPRING_DATASOURCE_USERNAME: catalog_user
+      SPRING_DATASOURCE_PASSWORD: catalog_password
+      # Dev credentials only. Production must supply real values; a startup guard
+      # for that is A13.
+      ADMIN_USERNAME: admin
+      ADMIN_PASSWORD: admin123
+      # No proxy in front of the container locally, so rate limiting keys on the
+      # socket address (see ClientIpResolver).
+      TRUSTED_PROXY_COUNT: "0"
+      APP_UPLOADS_DIR: /app/uploads
+    ports:
+      - "8080:8080"
+    volumes:
+      # Keeps uploaded images across container restarts. This volume is exactly
+      # what does NOT exist in production — hence the S3 work in A2.
+      - catalog-uploads:/app/uploads
+
+volumes:
+  catalog-db-data:
+  catalog-uploads:

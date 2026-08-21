@@ -41,15 +41,31 @@ public interface ProductRepository extends JpaRepository<Product, String> {
     long countByFeaturedTrueAndDeletedFalse();
     long countBySalePriceIsNotNullAndDeletedFalse();
 
-    // search is guaranteed non-null when called — callers must never pass null here
+    /**
+     * Every storefront listing goes through here. All four filters are independent and
+     * any combination is valid; pass null for status/category, false for onSale, and
+     * <strong>empty string</strong> (never null) for search to leave one out.
+     *
+     * <p>Deliberately one query rather than a branch per combination — the previous
+     * shape special-cased on-sale and silently dropped the other filters.
+     *
+     * <p>{@code search} must not be null. An empty string matches everything via
+     * {@code LIKE '%%'}, which is why there is no {@code :search IS NULL} branch here:
+     * Postgres cannot infer a type for an untyped null parameter and binds it as
+     * {@code bytea}, so {@code LOWER(?)} fails at runtime with
+     * "function lower(bytea) does not exist". H2 accepts it, so the test suite will not
+     * catch a regression here — verify against Postgres.
+     */
     @Query("SELECT p FROM Product p WHERE p.deleted = false AND " +
            "(:status IS NULL OR p.status = :status) AND " +
            "(:category IS NULL OR p.category = :category) AND " +
+           "(:onSale = false OR p.salePrice IS NOT NULL) AND " +
            "(LOWER(p.title) LIKE LOWER(CONCAT('%', :search, '%')) " +
            "OR LOWER(p.description) LIKE LOWER(CONCAT('%', :search, '%')))")
     Page<Product> findFiltered(
             @Param("status") ProductStatus status,
             @Param("category") ProductCategory category,
             @Param("search") String search,
+            @Param("onSale") boolean onSale,
             Pageable pageable);
 }

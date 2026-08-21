@@ -28,6 +28,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -53,7 +54,7 @@ class ProductServiceTest {
     @Test
     void getProductsWithNoFiltersReturnsMappedDtoList() {
         Pageable pageable = PageRequest.of(0, 20);
-        when(productRepository.findByDeletedFalse(pageable)).thenReturn(new PageImpl<>(List.of(
+        when(productRepository.findFiltered(null, null, "", false, pageable)).thenReturn(new PageImpl<>(List.of(
                 product("PRD-001", ProductStatus.IN_STOCK),
                 product("PRD-002", ProductStatus.OUT_OF_STOCK)
         )));
@@ -68,7 +69,7 @@ class ProductServiceTest {
     @Test
     void getProductsByStatusDelegatesToRepositoryFindByStatus() {
         Pageable pageable = PageRequest.of(0, 20);
-        when(productRepository.findByStatusAndDeletedFalse(ProductStatus.IN_STOCK, pageable))
+        when(productRepository.findFiltered(ProductStatus.IN_STOCK, null, "", false, pageable))
                 .thenReturn(new PageImpl<>(List.of(product("PRD-001", ProductStatus.IN_STOCK))));
 
         Page<ProductResponseDto> result = productService.getProducts(ProductStatus.IN_STOCK, null, null, false, pageable);
@@ -102,7 +103,7 @@ class ProductServiceTest {
     @Test
     void getProductsDelegatesToFindFiltered() {
         Pageable pageable = PageRequest.of(0, 20);
-        when(productRepository.findFiltered(null, null, "silk", pageable))
+        when(productRepository.findFiltered(null, null, "silk", false, pageable))
                 .thenReturn(new PageImpl<>(List.of(product("PRD-001", ProductStatus.IN_STOCK))));
 
         Page<ProductResponseDto> result = productService.getProducts(null, null, "silk", false, pageable);
@@ -112,14 +113,46 @@ class ProductServiceTest {
     }
 
     @Test
-    void getProductsNormalisesBlankSearchToNullAndFallsBackToFindAll() {
+    void getProductsNormalisesBlankSearchToEmptyStringAndReturnsEverything() {
         Pageable pageable = PageRequest.of(0, 20);
-        when(productRepository.findByDeletedFalse(pageable))
+        // A blank search must reach the repository as "" — never as "   ", and never as
+        // null, which Postgres rejects (see the note on findFiltered).
+        when(productRepository.findFiltered(null, null, "", false, pageable))
                 .thenReturn(new PageImpl<>(List.of(product("PRD-001", ProductStatus.IN_STOCK))));
 
         Page<ProductResponseDto> result = productService.getProducts(null, null, "   ", false, pageable);
 
         assertThat(result.getTotalElements()).isEqualTo(1);
+    }
+
+    // ── On-sale combined with other filters (A8) ──────────────────────────────
+
+    @Test
+    void onSaleKeepsCategoryFilter() {
+        Pageable pageable = PageRequest.of(0, 20);
+        when(productRepository.findFiltered(null, ProductCategory.BRIDAL_SAREES, "", true, pageable))
+                .thenReturn(new PageImpl<>(List.of(product("PRD-001", ProductStatus.IN_STOCK))));
+
+        Page<ProductResponseDto> result =
+                productService.getProducts(null, ProductCategory.BRIDAL_SAREES, null, true, pageable);
+
+        // Previously onSale returned early and the category was dropped, so a sale
+        // listing filtered by category silently returned every on-sale product.
+        assertThat(result.getTotalElements()).isEqualTo(1);
+        verify(productRepository).findFiltered(null, ProductCategory.BRIDAL_SAREES, "", true, pageable);
+    }
+
+    @Test
+    void onSaleKeepsStatusAndSearchFilters() {
+        Pageable pageable = PageRequest.of(0, 20);
+        when(productRepository.findFiltered(ProductStatus.IN_STOCK, null, "silk", true, pageable))
+                .thenReturn(new PageImpl<>(List.of(product("PRD-001", ProductStatus.IN_STOCK))));
+
+        Page<ProductResponseDto> result =
+                productService.getProducts(ProductStatus.IN_STOCK, null, "silk", true, pageable);
+
+        assertThat(result.getTotalElements()).isEqualTo(1);
+        verify(productRepository).findFiltered(ProductStatus.IN_STOCK, null, "silk", true, pageable);
     }
 
     // ── Soft delete / restore / permanent delete ───────────────────────────────
@@ -275,6 +308,84 @@ class ProductServiceTest {
 
         assertThat(result.productNumber()).isEqualTo("PRD-001");
         assertThat(result.status()).isEqualTo(ProductStatus.OUT_OF_STOCK);
+    }
+
+    // ── Orphaned image cleanup on update (A9) ─────────────────────────────────
+
+    /** Product carrying an existing gallery, as it would look before an update. */
+    private Product productWithImages(String... urls) {
+        Product p = product("PRD-001", ProductStatus.IN_STOCK);
+        p.setImages(new java.util.ArrayList<>(List.of(urls)));
+        p.setImageUrl(urls.length > 0 ? urls[0] : null);
+        return p;
+    }
+
+    private ProductUpdateRequest updateWithImages(List<String> images) {
+        return new ProductUpdateRequest(
+                "Saree", "Desc", new BigDecimal("9500.00"), "INR",
+                ProductStatus.IN_STOCK, false,
+                images.isEmpty() ? null : images.get(0),
+                ProductCategory.BRIDAL_SAREES, null, images
+        );
+    }
+
+    @Test
+    void updateProductDeletesImagesRemovedFromTheGallery() {
+        when(productRepository.findById("PRD-001"))
+                .thenReturn(Optional.of(productWithImages("/uploads/a.jpg", "/uploads/b.jpg", "/uploads/c.jpg")));
+        when(productRepository.save(any())).thenReturn(product("PRD-001", ProductStatus.IN_STOCK));
+
+        productService.updateProduct("PRD-001", updateWithImages(List.of("/uploads/a.jpg")));
+
+        verify(storageService).delete("/uploads/b.jpg");
+        verify(storageService).delete("/uploads/c.jpg");
+        // Still referenced — deleting it would break the live product page.
+        verify(storageService, never()).delete("/uploads/a.jpg");
+    }
+
+    @Test
+    void updateProductKeepsAnImageThatIsStillTheThumbnail() {
+        Product existing = productWithImages("/uploads/a.jpg", "/uploads/b.jpg");
+        when(productRepository.findById("PRD-001")).thenReturn(Optional.of(existing));
+        when(productRepository.save(any())).thenReturn(product("PRD-001", ProductStatus.IN_STOCK));
+
+        // Gallery is cleared, but a.jpg remains the primary imageUrl and is still shown
+        // on the product card, so its file must survive.
+        ProductUpdateRequest request = new ProductUpdateRequest(
+                "Saree", "Desc", new BigDecimal("9500.00"), "INR",
+                ProductStatus.IN_STOCK, false, "/uploads/a.jpg",
+                ProductCategory.BRIDAL_SAREES, null, List.of()
+        );
+        productService.updateProduct("PRD-001", request);
+
+        verify(storageService, never()).delete("/uploads/a.jpg");
+        verify(storageService).delete("/uploads/b.jpg");
+    }
+
+    @Test
+    void updateProductDeletesNothingWhenTheGalleryIsUnchanged() {
+        when(productRepository.findById("PRD-001"))
+                .thenReturn(Optional.of(productWithImages("/uploads/a.jpg", "/uploads/b.jpg")));
+        when(productRepository.save(any())).thenReturn(product("PRD-001", ProductStatus.IN_STOCK));
+
+        productService.updateProduct("PRD-001",
+                updateWithImages(List.of("/uploads/a.jpg", "/uploads/b.jpg")));
+
+        verify(storageService, never()).delete(any());
+    }
+
+    @Test
+    void updateProductSucceedsEvenIfDeletingAnOldImageFails() {
+        when(productRepository.findById("PRD-001"))
+                .thenReturn(Optional.of(productWithImages("/uploads/a.jpg", "/uploads/b.jpg")));
+        when(productRepository.save(any())).thenReturn(product("PRD-001", ProductStatus.IN_STOCK));
+        doThrow(new RuntimeException("S3 unavailable")).when(storageService).delete("/uploads/b.jpg");
+
+        // A storage outage must not stop the owner editing their product.
+        ProductResponseDto result =
+                productService.updateProduct("PRD-001", updateWithImages(List.of("/uploads/a.jpg")));
+
+        assertThat(result.productNumber()).isEqualTo("PRD-001");
     }
 
     @Test
