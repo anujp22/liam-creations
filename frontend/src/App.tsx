@@ -18,7 +18,9 @@ import { AdminInventory } from './pages/admin/AdminInventory';
 import { AdminDeleted } from './pages/admin/AdminDeleted';
 import { AdminOnSale } from './pages/admin/AdminOnSale';
 import { AdminReviews } from './pages/admin/AdminReviews';
+import { AdminOrders } from './pages/admin/AdminOrders';
 import { NotFoundPage } from './pages/NotFoundPage';
+import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AdminProductFormPage } from './pages/admin/AdminProductFormPage';
 import { useCart } from './context/CartContext';
@@ -78,6 +80,7 @@ function App() {
         <Route path="/sale" element={<SalePage />} />
         <Route path="/built-on-request" element={<BuiltOnRequestPage />} />
         <Route path="/cart" element={<CartPage />} />
+        <Route path="/privacy" element={<PrivacyPolicyPage />} />
         {/* Catch-all inside ShopLayout so unknown URLs keep the header and footer. */}
         <Route path="*" element={<NotFoundPage />} />
       </Route>
@@ -86,6 +89,7 @@ function App() {
       <Route element={<RequireAdmin />}>
         <Route element={<AdminLayout />}>
           <Route path="/admin" element={<AdminSummary />} />
+          <Route path="/admin/orders" element={<AdminOrders />} />
           <Route path="/admin/products" element={<AdminDashboard />} />
           <Route path="/admin/products/new" element={<AdminProductFormPage />} />
           <Route path="/admin/products/:productNumber/edit" element={<AdminProductFormPage />} />

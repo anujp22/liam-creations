@@ -4,7 +4,13 @@ import { useCart } from '../context/CartContext';
 import { effectivePrice } from '../api/products';
 import { formatINR } from '../utils/money';
 import { track } from '../utils/analytics';
-import { buildWhatsAppUrl, type CustomerDetails } from '../utils/whatsapp';
+import {
+  buildWhatsAppUrl,
+  linesFromCart,
+  linesFromOrder,
+  type CustomerDetails,
+} from '../utils/whatsapp';
+import { placeOrder, type Order } from '../api/orders';
 import { useTitle } from '../hooks/useTitle';
 import { Thumb } from '../components/Thumb';
 
@@ -27,6 +33,8 @@ export function CartPage() {
   const [customer, setCustomer] = useState<CustomerDetails>(loadCustomer);
   const [errors, setErrors] = useState<Partial<Record<keyof CustomerDetails, string>>>({});
   const [orderError, setOrderError] = useState<string | null>(null);
+  const [orderCode, setOrderCode] = useState<string | null>(null);
+  const [isPlacing, setIsPlacing] = useState(false);
 
   const setField = (key: keyof CustomerDetails, value: string) => {
     setCustomer((prev) => {
@@ -48,14 +56,64 @@ export function CartPage() {
     return Object.keys(next).length === 0;
   };
 
-  const handleOrder = () => {
-    if (!validate()) return;
+  /**
+   * Save the order, then hand off to WhatsApp.
+   *
+   * <p>The order is saved first because the order code has to go into the message —
+   * that code is the only thing linking the chat the owner is about to read to a row
+   * they can act on.
+   *
+   * <p><strong>If saving fails, WhatsApp still opens.</strong> The message then carries
+   * the cart's own prices and no order code, and the customer is told the order was not
+   * recorded. Losing the record is bad; losing the sale because the backend hiccuped is
+   * worse. The one thing that does block the handoff is a 409 — that means an item has
+   * genuinely gone, and sending the owner an order that cannot be fulfilled helps nobody.
+   */
+  const handleOrder = async () => {
+    if (!validate() || isPlacing) return;
+    setOrderError(null);
+    setIsPlacing(true);
+
+    let order: Order | null = null;
+    let saveFailed: string | null = null;
     try {
-      setOrderError(null);
-      window.open(buildWhatsAppUrl(items, total, customer), '_blank', 'noopener,noreferrer');
+      order = await placeOrder({
+        items: items.map(({ product, quantity }) => ({
+          productNumber: product.productNumber,
+          quantity,
+        })),
+        customerName: customer.name,
+        customerPhone: customer.phone,
+        customerEmail: customer.email,
+        customerAddress: customer.address,
+        notes: customer.notes,
+      });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'Could not save your order.';
+      if (message.startsWith('No longer available')) {
+        setOrderError(`${message}. Please remove it and try again.`);
+        setIsPlacing(false);
+        return;
+      }
+      saveFailed = message;
+    }
+
+    try {
+      const url = order
+        ? buildWhatsAppUrl(linesFromOrder(order), order.total, customer, order.orderCode)
+        : buildWhatsAppUrl(linesFromCart(items), total, customer, null);
+      window.open(url, '_blank', 'noopener,noreferrer');
       track('whatsapp-order', 'WhatsApp order');
+      setOrderCode(order?.orderCode ?? null);
+      if (saveFailed) {
+        setOrderError(
+          'We could not record your order, but your WhatsApp message is ready — please send it and we will confirm from there.',
+        );
+      }
     } catch (e) {
       setOrderError(e instanceof Error ? e.message : 'Could not start the WhatsApp order.');
+    } finally {
+      setIsPlacing(false);
     }
   };
 
@@ -163,7 +221,8 @@ export function CartPage() {
       <form className="checkout" onSubmit={(e) => { e.preventDefault(); handleOrder(); }}>
         <h3 className="checkout-title">Your details</h3>
         <p className="checkout-note">
-          So we can confirm your order and arrange delivery — sent to us along with your order on WhatsApp.
+          So we can confirm your order and arrange delivery — sent to us along with your order on
+          WhatsApp, and saved with your order. See our <Link to="/privacy">Privacy Policy</Link>.
         </p>
 
         <div className="checkout-row">
@@ -235,11 +294,17 @@ export function CartPage() {
 
         {orderError && <p className="checkout-error cart-order-error">{orderError}</p>}
 
-        <button type="button" onClick={handleOrder} className="whatsapp-btn">
+        {orderCode && (
+          <p className="cart-order-placed" role="status">
+            Order <strong>{orderCode}</strong> saved. Quote this code if you message us again.
+          </p>
+        )}
+
+        <button type="button" onClick={handleOrder} className="whatsapp-btn" disabled={isPlacing}>
           <svg className="whatsapp-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
             <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
           </svg>
-          Send order via WhatsApp
+          {isPlacing ? 'Saving your order…' : 'Send order via WhatsApp'}
         </button>
 
         <Link to="/" className="cart-continue-link">← Continue shopping</Link>

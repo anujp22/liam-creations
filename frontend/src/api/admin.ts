@@ -1,3 +1,4 @@
+import type { Order, OrderStatus } from './orders';
 import type { Product, ProductCategory, ProductPage, ProductStatus } from './products';
 import type { Review, ReviewStatus } from './reviews';
 
@@ -224,4 +225,47 @@ export function patchStatus(productNumber: string, status: ProductStatus): Promi
     method: 'PATCH',
     body: JSON.stringify({ status }),
   });
+}
+
+// ── orders ────────────────────────────────────────────────────────────────────
+
+interface OrderPagedResponse {
+  content: Order[];
+  page: { totalElements: number; totalPages: number; number: number; size: number };
+}
+
+export interface AdminOrderPage {
+  orders: Order[];
+  totalPages: number;
+  currentPage: number;
+  totalElements: number;
+}
+
+/** Orders newest first. Pass a status to see only that queue. */
+export async function listOrders(status: OrderStatus | 'ALL', page = 0): Promise<AdminOrderPage> {
+  const query = status === 'ALL' ? `page=${page}` : `status=${status}&page=${page}`;
+  const data = await adminRequest<OrderPagedResponse>(`/api/admin/orders?${query}`);
+  return {
+    orders: data.content,
+    totalPages: data.page.totalPages,
+    currentPage: data.page.number,
+    totalElements: data.page.totalElements,
+  };
+}
+
+/** Looked up by the code the customer quotes in WhatsApp, not the internal id. */
+export function fetchOrder(orderCode: string): Promise<Order> {
+  return adminRequest<Order>(`/api/admin/orders/${orderCode}`);
+}
+
+export function setOrderStatus(orderCode: string, status: OrderStatus): Promise<Order> {
+  return adminRequest<Order>(`/api/admin/orders/${orderCode}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status }),
+  });
+}
+
+export async function fetchNewOrderCount(): Promise<number> {
+  const data = await adminRequest<{ count: number }>('/api/admin/orders/new-count');
+  return data.count;
 }

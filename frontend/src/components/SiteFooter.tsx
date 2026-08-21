@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import logo from '../assets/logo.png';
 
 const INSTAGRAM_URL = 'https://www.instagram.com/_liamcreations';
@@ -22,6 +23,7 @@ export function SiteFooter() {
             Join our WhatsApp community ↗
           </a>
         </div>
+        <Link to="/privacy" className="footer-privacy">Privacy Policy</Link>
         <p className="footer-copy">© {new Date().getFullYear()} Liams Creations. Crafted with love.</p>
       </div>
     </footer>

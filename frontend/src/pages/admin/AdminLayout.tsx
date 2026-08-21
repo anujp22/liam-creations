@@ -3,9 +3,11 @@ import { useQuery } from '@tanstack/react-query';
 import logo from '../../assets/logo.png';
 import { useAdminAuth } from '../../context/AdminAuthContext';
 import { fetchPendingReviewCount } from '../../api/admin';
+import { useNewOrderCount } from '../../hooks/useOrders';
 
 const NAV = [
   { to: '/admin', label: 'Summary', end: true },
+  { to: '/admin/orders', label: 'Orders', end: false },
   { to: '/admin/products', label: 'Products', end: false },
   { to: '/admin/on-sale', label: 'On Sale', end: false },
   { to: '/admin/reviews', label: 'Reviews', end: false },
@@ -21,6 +23,7 @@ export function AdminLayout() {
     queryFn: fetchPendingReviewCount,
     staleTime: 30_000,
   });
+  const { data: newOrders = 0 } = useNewOrderCount();
 
   const handleLogout = () => {
     logout();
@@ -48,6 +51,9 @@ export function AdminLayout() {
               {n.label}
               {n.to === '/admin/reviews' && pendingReviews > 0 && (
                 <span className="admin-nav-badge">{pendingReviews}</span>
+              )}
+              {n.to === '/admin/orders' && newOrders > 0 && (
+                <span className="admin-nav-badge">{newOrders}</span>
               )}
             </NavLink>
           ))}
