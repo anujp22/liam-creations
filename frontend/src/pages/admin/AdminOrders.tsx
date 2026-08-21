@@ -169,14 +169,17 @@ export function AdminOrders() {
                     Prices as they were when this order was placed.
                   </p>
 
+                  {/* The current status is deliberately not among the options. Rendering
+                      it as a highlighted-but-disabled button made it read as the thing to
+                      press, and the badge in the header already says where the order is. */}
                   <div className="admin-order-actions">
                     <span className="admin-order-actions-label">Move to:</span>
-                    {ORDER_STATUSES.map((s) => (
+                    {ORDER_STATUSES.filter((s) => s !== order.status).map((s) => (
                       <button
                         key={s}
                         type="button"
-                        className={`filter-btn${order.status === s ? ' filter-btn--active' : ''}`}
-                        disabled={order.status === s || statusMutation.isPending}
+                        className="filter-btn"
+                        disabled={statusMutation.isPending}
                         onClick={() => moveTo(order, s)}
                       >
                         {ORDER_STATUS_LABELS[s]}
