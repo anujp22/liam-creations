@@ -245,7 +245,7 @@ and optional `VITE_GOATCOUNTER_URL`.
 ## Project Layout
 
 ```
-instgram-catalog/
+liam-creations/
 ├── backend/catalog-backend/        # Spring Boot API (Maven)
 │   └── src/main/java/.../catalog/
 │       ├── product/                # catalog: model · repository · service · controllers · DTOs
