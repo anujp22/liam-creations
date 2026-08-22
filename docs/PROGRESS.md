@@ -301,3 +301,19 @@ of this was ever caught. `ErrorDispatchSecurityTest` keeps the filters on.
 - **Mutation-test the tests that matter.** Three deliberate breakages were introduced into
   the cart handoff to check the new tests caught them. One did not, and the test was
   strengthened. A test that passes against broken code is worse than no test.
+
+## 2026-08-22 — A12 merged, branches cleaned up
+
+`feature/a12-admin-session-cookie` is in `main`. It carried the runtime declarations and
+the Maven wrapper from `chore/rename-to-liam-creations`, so that branch needed no separate
+merge — its commits are in `main` through this one.
+
+It was merged red and is now green. `tsc -b` failed on two errors in `src/api/admin.test.ts`
+that were really one mistake: `vi.fn` infers its call signature from the mock body, so
+mocks written as `async () => ...` produced a zero-length `mock.calls` tuple, and reading
+the `init` argument off a recorded call could not typecheck. Declaring the real `fetch`
+shape once (`FetchLike`) fixed both errors. The tests were correct; only their types were
+wrong — worth remembering, because the failure looked like a test bug and was not one.
+
+Seventeen fully-merged local branches were deleted. Nothing was lost: every one of them
+pointed at a commit already reachable from `main`, and no remote branch was touched.
