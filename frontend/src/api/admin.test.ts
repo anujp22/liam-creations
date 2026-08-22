@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { AdminAuthError, deleteProduct, fetchCurrentAdmin, login, logout } from './admin';
 
 /**
@@ -9,13 +9,20 @@ import { AdminAuthError, deleteProduct, fetchCurrentAdmin, login, logout } from 
  * the backend is correct and it is this side that would be silently wrong.
  */
 
-function mockFetch() {
-  const fetchMock = vi.fn(async () => new Response(null, { status: 204 }));
+// fetch's real shape. Without it vi.fn infers a zero-argument call signature, which
+// makes mock.calls a tuple of length 0 -- so reading the init argument off a recorded
+// call does not compile, and two mocks that differ only in declared arity stop being
+// interchangeable.
+type FetchLike = (url: string, init?: RequestInit) => Promise<Response>;
+type FetchMock = Mock<FetchLike>;
+
+function mockFetch(): FetchMock {
+  const fetchMock = vi.fn<FetchLike>(async () => new Response(null, { status: 204 }));
   vi.stubGlobal('fetch', fetchMock);
   return fetchMock;
 }
 
-function lastInit(fetchMock: ReturnType<typeof mockFetch>): RequestInit {
+function lastInit(fetchMock: FetchMock): RequestInit {
   return fetchMock.mock.calls.at(-1)![1] as unknown as RequestInit;
 }
 
@@ -43,7 +50,7 @@ describe('admin API session handling', () => {
   });
 
   it('does not send the CSRF token on a read', async () => {
-    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ username: 'admin' }), {
+    const fetchMock = vi.fn<FetchLike>(async () => new Response(JSON.stringify({ username: 'admin' }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     }));
@@ -64,7 +71,7 @@ describe('admin API session handling', () => {
   });
 
   it('logging in posts the credentials once and returns the username', async () => {
-    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ username: 'admin' }), {
+    const fetchMock = vi.fn<FetchLike>(async () => new Response(JSON.stringify({ username: 'admin' }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     }));
@@ -81,7 +88,7 @@ describe('admin API session handling', () => {
 
   it('fetches a CSRF token first when the page has none yet', async () => {
     document.cookie = 'XSRF-TOKEN=; path=/; max-age=0';
-    const fetchMock = vi.fn(async (url: string) => {
+    const fetchMock = vi.fn<FetchLike>(async (url: string) => {
       if (url === '/api/admin/me') {
         document.cookie = 'XSRF-TOKEN=seeded; path=/';
         return new Response(null, { status: 401 });
@@ -108,7 +115,7 @@ describe('admin API session handling', () => {
   });
 
   it('never stores the password anywhere readable', async () => {
-    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ username: 'admin' }), {
+    const fetchMock = vi.fn<FetchLike>(async () => new Response(JSON.stringify({ username: 'admin' }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     }));
