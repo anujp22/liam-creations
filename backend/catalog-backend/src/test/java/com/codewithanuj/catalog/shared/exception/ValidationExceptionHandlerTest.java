@@ -39,6 +39,11 @@ class ValidationExceptionHandlerTest {
     @MockBean
     private com.codewithanuj.catalog.shared.storage.StorageService storageService;
 
+    // AdminAuthController needs the AuthenticationManager to log the admin in. The real
+    // one is defined in SecurityConfig, which @WebMvcTest does not load.
+    @MockBean
+    private org.springframework.security.authentication.AuthenticationManager authenticationManager;
+
     // Review controllers are picked up by the broad @WebMvcTest scan too
     @MockBean
     private com.codewithanuj.catalog.review.service.ReviewService reviewService;

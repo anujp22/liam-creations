@@ -25,8 +25,8 @@ export function AdminLayout() {
   });
   const { data: newOrders = 0 } = useNewOrderCount();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/admin/login', { replace: true });
   };
 

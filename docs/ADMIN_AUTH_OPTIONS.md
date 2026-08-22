@@ -1,10 +1,14 @@
 # A12 — admin authentication: options and trade-offs
 
-**Status: memo. No code has been written for this. It is your decision.**
+**Status: decided and built — Option 3, 2026-08-21.** Kept as the record of why, not as
+an open question. What was actually built, what it cost, and what turned up along the
+way is in `docs/PROGRESS.md`, "A12 — the admin session, and the two things that
+surprised me".
 
-Read this when you have twenty minutes, pick one, and tell me. Nothing else in the
-launch work depends on it, so it is not blocking — but it is the last real security
-question left, and the answer gets harder to change once the shop is live.
+Everything below describes the state of the code *before* that change. "What is there
+today" is now history: HTTP Basic is gone, the password is no longer in `sessionStorage`
+and no longer crosses the wire on every request, and logout is a real server-side
+invalidation.
 
 ---
 

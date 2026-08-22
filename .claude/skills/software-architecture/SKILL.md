@@ -12,11 +12,14 @@ concrete need justifies it.
 How it's actually built (respect these established choices):
 - Backend is **feature-packaged** (`catalog.product`, `catalog.review`, `catalog.shared`,
   `catalog.seo`) — a new domain gets its own package, not a shared layer folder.
-- Auth is **HTTP Basic + stateless**, single in-memory admin; storefront reads and review
-  submission are public, `/api/admin/**` is admin-only.
+- Auth is a **server-side session behind an HttpOnly cookie** (A12), single in-memory
+  admin; storefront reads, review submission and order placement are public and stay
+  session-free, `/api/admin/**` is admin-only. Admin writes need a CSRF token; the app is
+  therefore no longer stateless — one instance, or sticky sessions.
 - Data is **soft-deleted** (`deleted` flag), never hard-deleted from the storefront.
 - Errors use one shape (`ApiErrorResponse`), signaled via `ResponseStatusException`.
-- Frontend server state is TanStack Query; admin session token in sessionStorage.
+- Frontend server state is TanStack Query; the admin session is an HttpOnly cookie the
+  frontend cannot read, so `AdminAuthContext` confirms it against the server on load.
 - Brand/name in UI copy: "Liams Creations".
 See the `spring-boot-backend`, `postgres-data`, and `react-frontend` skills for specifics.
 

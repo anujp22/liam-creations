@@ -55,23 +55,30 @@ subpackages. Don't create a top-level `controllers`/`services` layer split.
 ## Security (this repo's actual setup)
 
 - `shared.config.SecurityConfig` defines a `SecurityFilterChain` bean (component-based).
-  Auth is **HTTP Basic, `SessionCreationPolicy.STATELESS`, CSRF disabled** (SPA + Basic).
+  Auth is a **server-side session** (A12): `POST /api/admin/login` in `AdminAuthController`
+  authenticates and saves the `SecurityContext`, and the cookie is `HttpOnly` + `Secure` +
+  `SameSite=Strict` (`server.servlet.session.cookie.*`). `SessionCreationPolicy.IF_REQUIRED`
+  with the **request cache disabled** — otherwise every anonymous 401 opens a session.
 - Admin is a single in-memory user (`InMemoryUserDetailsManager`, role `ADMIN`) with
   credentials from `${admin.username}`/`${admin.password}` env config; password via
   `BCryptPasswordEncoder`.
 - Route rules: `GET /api/products/**`, `GET /api/reviews/**`, `POST /api/products/*/reviews`,
-  `GET /uploads/**`, `GET /sitemap.xml`, `/actuator/health` are public; `/api/admin/**`
-  requires `ROLE_ADMIN`; everything else `denyAll()`. Add new public routes in **both**
-  `authorizeHttpRequests` and the custom `BasicAuthenticationFilter.shouldNotFilter`
-  override (public routes skip Basic processing so stale cached creds can't block them).
+  `POST /api/orders`, `GET /uploads/**`, `GET /sitemap.xml`, `/actuator/health` are public;
+  `POST /api/admin/login` is public (it is how you log in); the rest of `/api/admin/**`
+  requires `ROLE_ADMIN`; everything else `denyAll()`.
+- **CSRF is on for admin routes** (double-submit: readable `XSRF-TOKEN` cookie, echoed as
+  `X-XSRF-TOKEN`). `CsrfCookieFilter` forces the cookie to actually be written — Spring
+  defers the token and nothing in a JSON API asks for it. A new **public write** must be
+  added to `csrf().ignoringRequestMatchers(...)` as well as `authorizeHttpRequests`, or it
+  will 403 for visitors who were never handed a token.
 - CORS origins come from `${cors.allowed-origin.dev|prod}`; `ApiRateLimitFilter` is
-  registered before `BasicAuthenticationFilter`.
+  registered before `SecurityContextHolderFilter`, i.e. first in the chain.
 - Never log credentials, tokens, or full request bodies containing secrets.
 
 ## Rate limiting (Bucket4j) & caching (Caffeine)
 
 - Rate limiting lives in `shared.config.ApiRateLimitFilter` (Bucket4j), registered in
-  `SecurityConfig` before `BasicAuthenticationFilter`. When adding a new abuse-prone
+  `SecurityConfig` at the front of the chain. When adding a new abuse-prone
   endpoint (esp. public writes like review submission), decide its bucket policy
   explicitly and test the 429 path (`ApiRateLimitFilterTest` is the model).
 - Use Caffeine (`@Cacheable`) for read-heavy, slow-changing data. Always define an

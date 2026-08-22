@@ -44,6 +44,15 @@ Existing tests to copy as templates (they mirror the feature-package layout):
 - Use `spring-security-test`: `@WithMockUser`, `SecurityMockMvcRequestPostProcessors`.
 - Assert public routes are reachable and protected routes reject unauthenticated /
   unauthorized callers (401/403).
+- **Almost every controller slice here runs `addFilters = false`**, so it never touches
+  the real chain. Anything about the chain itself — login, CSRF, cookies, who may reach
+  what — belongs in `AdminSessionAuthTest` (`@SpringBootTest` with filters on), which is
+  the model to copy. Obtain the CSRF token the way a browser does (read the `XSRF-TOKEN`
+  cookie, echo it in `X-XSRF-TOKEN`) rather than with the `csrf()` post-processor, which
+  bypasses the wiring you are trying to test.
+- Note `src/test/resources/application.properties` **replaces** the main file rather than
+  adding to it. A test that needs a real production property must supply it, or read the
+  main file directly (`PostgresOnlyMigrationsTest`, `AdminSessionAuthTest`).
 
 ### Cross-cutting behavior
 - **Rate limiting:** assert the 429 response after exceeding a Bucket4j bucket — this

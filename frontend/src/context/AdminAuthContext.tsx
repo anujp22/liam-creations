@@ -1,51 +1,75 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import {
-  clearToken,
-  encodeBasicToken,
-  getStoredToken,
+  fetchCurrentAdmin,
+  login as loginRequest,
+  logout as logoutRequest,
   setUnauthorizedHandler,
-  storeToken,
-  verifyCredentials,
 } from '../api/admin';
 
 interface AdminAuthContextValue {
+  /** True only once the server has confirmed a session. */
   isAuthenticated: boolean;
+  /** True until the initial session check finishes — routes must wait, not redirect. */
+  isChecking: boolean;
   username: string | null;
   login: (username: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 const AdminAuthContext = createContext<AdminAuthContextValue | null>(null);
 
 export function AdminAuthProvider({ children }: { children: ReactNode }) {
   const [username, setUsername] = useState<string | null>(null);
-  const hasToken = getStoredToken() !== null;
-  // Trust an existing sessionStorage token optimistically; any stale token is
-  // caught on the first request (401 -> logout).
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(hasToken);
+  // The session lives in an HttpOnly cookie this code cannot read, so unlike the old
+  // sessionStorage token there is nothing to inspect synchronously. The server is the
+  // only thing that knows, which is why every load starts in the checking state.
+  const [isChecking, setIsChecking] = useState(true);
 
-  const logout = () => {
-    clearToken();
-    setUsername(null);
-    setIsAuthenticated(false);
-  };
+  const clearLocalState = () => setUsername(null);
 
-  // Let the API layer trigger logout on any 401.
   useEffect(() => {
-    setUnauthorizedHandler(logout);
+    // Let the API layer trigger logout on any 401 — a session that expired or was
+    // revoked server-side shows up as one on the next request.
+    setUnauthorizedHandler(clearLocalState);
     return () => setUnauthorizedHandler(null);
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    // Restores the session across a refresh, and doubles as the call that seeds the
+    // CSRF cookie the login form needs — it runs logged-out too, and 401 still carries
+    // the token.
+    fetchCurrentAdmin()
+      .then((name) => {
+        if (!cancelled) setUsername(name);
+      })
+      .catch(() => {
+        if (!cancelled) setUsername(null);
+      })
+      .finally(() => {
+        if (!cancelled) setIsChecking(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const login = async (user: string, password: string) => {
-    const token = encodeBasicToken(user, password);
-    const verifiedName = await verifyCredentials(token); // throws on bad creds
-    storeToken(token);
+    const verifiedName = await loginRequest(user, password); // throws on bad creds
     setUsername(verifiedName);
-    setIsAuthenticated(true);
+  };
+
+  const logout = async () => {
+    // Clear locally first so the UI never sits on an admin screen waiting for the
+    // network; the server-side invalidation is what actually revokes the session.
+    clearLocalState();
+    await logoutRequest();
   };
 
   return (
-    <AdminAuthContext.Provider value={{ isAuthenticated, username, login, logout }}>
+    <AdminAuthContext.Provider
+      value={{ isAuthenticated: username !== null, isChecking, username, login, logout }}
+    >
       {children}
     </AdminAuthContext.Provider>
   );

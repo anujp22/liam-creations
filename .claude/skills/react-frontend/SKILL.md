@@ -16,7 +16,8 @@ Scripts: `npm run dev`, `npm run build` (runs `tsc -b` then `vite build`), `npm 
   `useEffect` + `useState` fetching.
 - **API functions live in `src/api/`** (`products.ts`, `admin.ts`, `reviews.ts`) and are
   thin + typed. Public reads use plain `fetch`; admin/authenticated calls go through the
-  `adminRequest<T>()` helper in `api/admin.ts` (attaches the Basic token, centralizes
+  `adminRequest<T>()` helper in `api/admin.ts` (sends the session cookie and the CSRF
+  header, centralizes
   401 → logout and error-message extraction from `body.message`). Reuse these — don't
   hand-roll `fetch` with auth headers in components.
 - **Query hooks live in `src/hooks/`** (`useProducts`, `useReviews`, `useTitle`), not
@@ -50,8 +51,13 @@ Scripts: `npm run dev`, `npm run build` (runs `tsc -b` then `vite build`), `npm 
 ## State
 
 - Server state → TanStack Query. App/UI state → React Context in `src/context/`:
-  `AdminAuthContext` (admin session; Basic token in **sessionStorage** key `lc-admin-auth`,
-  cleared on tab close and on any 401) and `CartContext`. Don't put server data in Context.
+  `AdminAuthContext` (admin session; an **HttpOnly cookie this code cannot read**, so the
+  session is confirmed asynchronously via `GET /api/admin/me` — hence `isChecking`, which
+  route guards must wait on rather than redirect through; cleared on any 401) and
+  `CartContext`. Don't put server data in Context.
+- Admin **writes** must go through `adminRequest`/`authenticatedInit` in `api/admin.ts`:
+  they attach the `X-XSRF-TOKEN` header from the `XSRF-TOKEN` cookie and set
+  `credentials: 'same-origin'`. A bare `fetch` to an admin route gets a 403.
 - Keep local component state local. Reach for Context only when prop-drilling is real.
 
 ## TypeScript & quality

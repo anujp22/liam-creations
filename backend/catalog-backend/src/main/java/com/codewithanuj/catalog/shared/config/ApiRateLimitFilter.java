@@ -41,6 +41,14 @@ public class ApiRateLimitFilter extends OncePerRequestFilter {
      * the table with junk.
      */
     private static final int ORDER_PER_MINUTE = 5;
+    /**
+     * Login is the one admin route reachable without a session, so it is the only one an
+     * attacker can grind at. Ten a minute leaves the owner room to mistype a long
+     * password a few times and makes guessing hopeless. Note this is still per-IP: it
+     * bounds a single source, not a distributed attempt — password length remains the
+     * primary defence (see A13, {@code AdminCredentialsValidator}).
+     */
+    private static final int LOGIN_PER_MINUTE = 10;
 
     private final Cache<String, Bucket> buckets = Caffeine.newBuilder()
             .expireAfterAccess(Duration.ofMinutes(10))
@@ -62,7 +70,9 @@ public class ApiRateLimitFilter extends OncePerRequestFilter {
         String ip = clientIpResolver.resolve(request);
 
         Bucket bucket;
-        if (uri.startsWith("/api/admin/")) {
+        if (isLogin(request, uri)) {
+            bucket = bucketFor("login:" + ip, LOGIN_PER_MINUTE);
+        } else if (uri.startsWith("/api/admin/")) {
             bucket = bucketFor("admin:" + ip, ADMIN_PER_MINUTE);
         } else if (isReviewSubmit(request, uri)) {
             bucket = bucketFor("review:" + ip, REVIEW_PER_MINUTE);
@@ -82,6 +92,10 @@ public class ApiRateLimitFilter extends OncePerRequestFilter {
                     {"status":429,"error":"Too Many Requests","message":"Rate limit exceeded. Please try again shortly."}
                     """);
         }
+    }
+
+    private boolean isLogin(HttpServletRequest request, String uri) {
+        return "POST".equals(request.getMethod()) && "/api/admin/login".equals(uri);
     }
 
     private boolean isOrderSubmit(HttpServletRequest request, String uri) {

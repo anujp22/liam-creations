@@ -2,8 +2,6 @@ import type { Order, OrderStatus } from './orders';
 import type { Product, ProductCategory, ProductPage, ProductStatus } from './products';
 import type { Review, ReviewStatus } from './reviews';
 
-const TOKEN_KEY = 'lc-admin-auth';
-
 /** Payload for create and update. productNumber is assigned by the server. */
 export interface ProductInput {
   title: string;
@@ -35,22 +33,38 @@ interface PagedResponse {
 /** Thrown when the backend rejects credentials (401). */
 export class AdminAuthError extends Error {}
 
-// ── credential storage (sessionStorage: cleared when the tab closes) ──────────
+// ── the session (A12) ─────────────────────────────────────────────────────────
+//
+// There is no token to store here any more. The admin session is a server-side
+// session behind an HttpOnly cookie, which this code deliberately cannot read: the
+// browser attaches it, and an XSS hole in the admin UI has nothing to steal.
+//
+// The price of cookies is CSRF — the browser attaches them to a cross-site request
+// just as happily as to ours — so every mutating request echoes the double-submit
+// token back to the server. The backend writes it as a readable XSRF-TOKEN cookie on
+// any response, including the 401 the login page's session check gets.
 
-export function getStoredToken(): string | null {
-  return sessionStorage.getItem(TOKEN_KEY);
+const CSRF_COOKIE = 'XSRF-TOKEN';
+const CSRF_HEADER = 'X-XSRF-TOKEN';
+
+function readCsrfToken(): string | null {
+  const match = document.cookie.split('; ').find((c) => c.startsWith(`${CSRF_COOKIE}=`));
+  return match ? decodeURIComponent(match.slice(CSRF_COOKIE.length + 1)) : null;
 }
 
-export function storeToken(token: string) {
-  sessionStorage.setItem(TOKEN_KEY, token);
-}
-
-export function clearToken() {
-  sessionStorage.removeItem(TOKEN_KEY);
-}
-
-export function encodeBasicToken(username: string, password: string): string {
-  return btoa(`${username}:${password}`);
+/**
+ * Makes sure a CSRF token exists before a write that might be the first call this page
+ * ever makes. Every admin response carries the cookie — including the 401 this gets when
+ * logged out — so one round trip is enough. Without it, a login submitted before the
+ * provider's session check came back would be rejected with an unexplained 403.
+ */
+async function ensureCsrfToken(): Promise<void> {
+  if (readCsrfToken()) return;
+  try {
+    await fetch('/api/admin/me', { credentials: 'same-origin' });
+  } catch {
+    /* offline — the request below will fail with a better message than this one */
+  }
 }
 
 // A handler the provider registers so any 401 anywhere logs the admin out.
@@ -59,42 +73,91 @@ export function setUnauthorizedHandler(fn: (() => void) | null) {
   onUnauthorized = fn;
 }
 
+/** Cookie plus CSRF token — everything an authenticated request needs. */
+function authenticatedInit(init: RequestInit = {}): RequestInit {
+  const headers = new Headers(init.headers);
+  const method = (init.method ?? 'GET').toUpperCase();
+  // GET and HEAD are CSRF-safe, and the server does not check them.
+  if (method !== 'GET' && method !== 'HEAD') {
+    const token = readCsrfToken();
+    if (token) headers.set(CSRF_HEADER, token);
+  }
+  return { ...init, headers, credentials: 'same-origin' };
+}
+
 // ── request helper ────────────────────────────────────────────────────────────
 
 async function adminRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const token = getStoredToken();
-  const headers = new Headers(init.headers);
-  if (token) headers.set('Authorization', `Basic ${token}`);
+  const withAuth = authenticatedInit(init);
+  const headers = new Headers(withAuth.headers);
   if (init.body) headers.set('Content-Type', 'application/json');
 
-  const res = await fetch(path, { ...init, headers });
+  const res = await fetch(path, { ...withAuth, headers });
 
   if (res.status === 401) {
     onUnauthorized?.();
     throw new AdminAuthError('Your session has expired. Please log in again.');
   }
   if (!res.ok) {
-    let message = `Request failed (${res.status})`;
-    try {
-      const body = await res.json();
-      if (body?.message) message = body.message;
-    } catch {
-      /* non-JSON error body */
-    }
-    throw new Error(message);
+    throw new Error(await errorMessage(res, `Request failed (${res.status})`));
   }
 
   if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
 }
 
-/** Verifies credentials against GET /api/admin/me; returns the username. */
-export async function verifyCredentials(token: string): Promise<string> {
-  const res = await fetch('/api/admin/me', {
-    headers: { Authorization: `Basic ${token}` },
-  });
+async function errorMessage(res: Response, fallback: string): Promise<string> {
+  try {
+    const body = await res.json();
+    if (body?.message) return body.message as string;
+  } catch {
+    /* non-JSON error body */
+  }
+  return fallback;
+}
+
+// ── login / logout / session check ────────────────────────────────────────────
+
+/** Exchanges the password for a session cookie. Returns the signed-in username. */
+export async function login(username: string, password: string): Promise<string> {
+  await ensureCsrfToken();
+  const res = await fetch(
+    '/api/admin/login',
+    authenticatedInit({
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    }),
+  );
+
   if (res.status === 401) throw new AdminAuthError('Invalid username or password.');
-  if (!res.ok) throw new Error(`Login check failed (${res.status})`);
+  if (!res.ok) throw new Error(await errorMessage(res, `Login failed (${res.status})`));
+  const body: { username: string } = await res.json();
+  return body.username;
+}
+
+/**
+ * Ends the session on the server, not just in this tab. Failures are swallowed on
+ * purpose: whatever happened, the owner asked to be logged out, and the UI must let
+ * them go rather than trapping them in the admin because a request failed.
+ */
+export async function logout(): Promise<void> {
+  try {
+    await ensureCsrfToken();
+    await fetch('/api/admin/logout', authenticatedInit({ method: 'POST' }));
+  } catch {
+    /* offline or server down — the local state is cleared either way */
+  }
+}
+
+/**
+ * Who the cookie belongs to, or null if there is no session. Also the call that seeds
+ * the CSRF cookie for the login form, which is why it runs even when logged out.
+ */
+export async function fetchCurrentAdmin(): Promise<string | null> {
+  const res = await fetch('/api/admin/me', { credentials: 'same-origin' });
+  if (res.status === 401) return null;
+  if (!res.ok) throw new Error(`Session check failed (${res.status})`);
   const body: { username: string } = await res.json();
   return body.username;
 }
@@ -184,30 +247,19 @@ export async function fetchPendingReviewCount(): Promise<number> {
 
 /** Uploads image files (multipart) and returns their public URLs in order. */
 export async function uploadImages(files: File[]): Promise<string[]> {
-  const token = getStoredToken();
   const form = new FormData();
   files.forEach((f) => form.append('files', f));
 
-  // Note: do not set Content-Type — the browser adds the multipart boundary.
-  const res = await fetch('/api/admin/uploads', {
-    method: 'POST',
-    headers: token ? { Authorization: `Basic ${token}` } : undefined,
-    body: form,
-  });
+  // Not adminRequest: that one sets a JSON Content-Type, and multipart needs the
+  // browser to write the header itself so the boundary matches the body.
+  const res = await fetch('/api/admin/uploads', authenticatedInit({ method: 'POST', body: form }));
 
   if (res.status === 401) {
     onUnauthorized?.();
     throw new AdminAuthError('Your session has expired. Please log in again.');
   }
   if (!res.ok) {
-    let message = `Upload failed (${res.status})`;
-    try {
-      const body = await res.json();
-      if (body?.message) message = body.message;
-    } catch {
-      /* non-JSON error body */
-    }
-    throw new Error(message);
+    throw new Error(await errorMessage(res, `Upload failed (${res.status})`));
   }
   const body: { urls: string[] } = await res.json();
   return body.urls;
