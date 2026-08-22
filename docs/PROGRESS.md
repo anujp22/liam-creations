@@ -41,8 +41,10 @@ None of them block further development; all of them block launch.
    give me a contact address for data requests — it is a `REPLACE-ME@example.com`
    placeholder today.
 6. **Confirm `VITE_OWNER_WHATSAPP`** is the real business number.
-7. ~~Decide A12~~ — **decided 2026-08-21: Option 3, HttpOnly session cookie.** Build it
-   at handover, not before. See below.
+7. ~~Decide A12~~ — **decided 2026-08-21: Option 3, HttpOnly session cookie. Built
+   2026-08-21.** Nothing left for you here except one deployment consequence: the app is
+   no longer stateless, so run **one instance, or turn on sticky sessions** — see
+   `infra/DEPLOYMENT.md`, "Admin sessions and the load balancer".
 
 ---
 
@@ -63,7 +65,7 @@ None of them block further development; all of them block launch.
 | **A13** | Production would inherit the shipped `admin/admin123` if `ADMIN_PASSWORD` was forgotten, and boot looking healthy. `AdminCredentialsValidator` now refuses to start on a blank, well-known, too-short, or username-matching password. Written as an `EnvironmentPostProcessor`, not a bean — see below. |
 | **Orders** | New feature, agreed in the decision table. Entity + `V14`, order codes from a sequence, capture on the WhatsApp handoff, admin Orders screen. See its own section below. |
 | **A14** | No index on `products` beyond the primary key. Five partial indexes added in a Postgres-only migration, each chosen by measurement. See below. |
-| **A12** | **Decided, deliberately not built.** Option 3 (HttpOnly server-side session cookie) chosen 2026-08-21. Memo: `docs/ADMIN_AUTH_OPTIONS.md`. |
+| **A12** | The admin password was base64'd into `sessionStorage` and re-sent on every request, readable by any script on the page and revocable only by redeploying. Now a server-side session behind an `HttpOnly`/`Secure`/`SameSite=Strict` cookie, with CSRF re-enabled for admin writes and a real logout. Option 3 from `docs/ADMIN_AUTH_OPTIONS.md`. **Verified in a real browser**, not just by tests — see below. |
 | **Privacy policy** | Written and routed at `/privacy`, linked from the footer and the checkout form. Copy is a draft pending your review. |
 | **Frontend tests** | There were none; the only gate was `tsc && vite build`. Vitest + Testing Library added, wired into CI. 28 tests. |
 | — | `PUBLIC_BASE_URL` had no prod value, so the live sitemap would have advertised `localhost` URLs. Now required. |
@@ -83,12 +85,6 @@ None of them block further development; all of them block launch.
 
 **Blocked on you**
 
-- **A12 — implement Option 3 at handover.** The decision is made; the work is deferred
-  on purpose, because dev deliberately keeps `admin`/`admin123` and A13 already blocks
-  those in prod only. When it is built: **CSRF must be re-enabled for admin routes** —
-  currently disabled, which is fine for header auth and unsafe for cookies. That is the
-  part to test hardest. Note it is buildable locally whenever you want: `Secure` cookies
-  work on `localhost`, and single-origin routing is already settled.
 - The privacy policy contact address.
 
 ---
@@ -134,6 +130,75 @@ phone can actually reach:
 - `POST /api/orders` is public and unauthenticated (there are no customer accounts) and
   it writes personal data, so it is rate limited at **5/min per client IP** in its own
   bucket, alongside review submission.
+
+## A12 — the admin session, and the two things that surprised me
+
+Option 3 from `docs/ADMIN_AUTH_OPTIONS.md`, built as described: login exchanges the
+password for a server-side session, the cookie is `HttpOnly` + `Secure` +
+`SameSite=Strict`, and logout invalidates it server-side. HTTP Basic is gone entirely
+rather than kept alongside — leaving it would have left the wire-password hole open,
+which was the point of the exercise.
+
+**Verified in a real browser** (Playwright, dev stack, 2026-08-21), because the parts
+that matter here are browser behaviours no MockMvc test can reach:
+
+- `document.cookie` from inside the admin page reads `XSRF-TOKEN=…` and nothing else.
+  The session cookie is invisible to the page — that is the whole feature.
+- A real Chromium accepts a `Secure` cookie over `http://localhost`, so local dev
+  needs no exception. This was the assumption the memo made; it holds.
+- A refresh keeps the owner logged in, and no longer flashes the login screen on the
+  way (see the guard note below).
+- An admin `DELETE` with the token returns 204; the identical request with the same
+  cookie and no token returns 403.
+- After logout the cookie is gone from the browser and the protected URL redirects.
+- Login rate limiting: ten wrong passwords answer 401, the eleventh answers 429.
+
+### CSRF, which is the part worth reading twice
+
+Cookies are attached by the browser whether or not the request came from our page, so
+turning cookies on without CSRF would have made the admin API reachable from any site
+the owner happened to visit while logged in. It is on for admin routes as a
+double-submit token: the server sets a readable `XSRF-TOKEN` cookie, the SPA echoes it
+in `X-XSRF-TOKEN`, and the two must match.
+
+Three details that are easy to get wrong and are all deliberate here:
+
+- **`CsrfCookieFilter` exists because Spring defers the token.** The framework only
+  writes the cookie when something asks for the token, and nothing in a JSON API ever
+  does — so without that filter the cookie is never written and every admin write is a
+  403. It runs *before* the authorization filter on purpose: the login page's first
+  call is `GET /api/admin/me`, which answers 401, and that 401 still has to carry the
+  token or the login POST after it has nothing to send.
+- **The public POSTs are exempt.** `POST /api/orders` and review submission carry no
+  session and no credential, so there is no authority for a forged request to borrow —
+  and protecting them would break checkout for any visitor who arrived without first
+  being handed a token.
+- **The XOR token handler is off.** Spring's default masks the token per response as a
+  BREACH mitigation, which requires the client to send back the masked value — something
+  a JavaScript client reading a cookie cannot do.
+
+### Two things found while building it
+
+- **Spring's request cache was opening a session on every 401.** It saves the current
+  request into a new session so it can be replayed after a form login — which this app
+  does not have. Observed live: a logged-out `GET /api/admin/me` came back 401 *and*
+  `Set-Cookie: LC_SESSION=…`, meaning anyone could allocate server-side state in a loop.
+  `requestCache(disable())` in `SecurityConfig`, with a test.
+- **The route guard had to learn to wait.** Whether a session exists is now a question
+  only the server can answer, so the first render of `/admin/anything` happens before
+  the answer arrives. The old guard read `sessionStorage` synchronously; the new one
+  would have bounced a logged-in owner to the login page on every refresh. Hence
+  `isChecking` in `AdminAuthContext` and the loading branch in `RequireAdmin`.
+
+### What was deliberately not built
+
+- **No per-username lockout.** That was Option 1's item, not Option 3's. Login now has
+  its own per-IP bucket (10/minute, vs 60 for the rest of the admin API), which bounds a
+  single source but not a distributed attempt. Password length (A13) is still the
+  primary defence.
+- **Sessions are in memory.** One instance, or sticky sessions — the honest cost the
+  memo named. For a single-operator shop this is a hypothetical; it is written up in
+  `infra/DEPLOYMENT.md` so it is not a surprise at deploy time.
 
 ## A13 — why an `EnvironmentPostProcessor` and not a bean
 

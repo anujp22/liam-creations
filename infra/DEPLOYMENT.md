@@ -58,6 +58,34 @@ Cross-checked against `application-prod.properties` and `application.properties`
 | `S3_BUCKET` | `liams-catalog-photos` | Bucket holding product photos. No default — the app will not start without it, which is deliberate: uploads that silently vanish on the next deploy are worse than a failed boot. |
 | `S3_REGION` | `ap-south-1` | Bucket region. |
 
+### Optional
+
+| Variable | Default | Notes |
+|----------|---------|-------|
+| `SESSION_COOKIE_SECURE` | `true` | Marks the admin session and CSRF cookies `Secure`. **Leave it alone in production.** Setting it to `false` lets the session cookie travel in clear text, which is exactly what A12 was meant to prevent. It exists only for a non-localhost HTTP environment; browsers already accept `Secure` cookies on `localhost`. |
+
+### Admin sessions and the load balancer (A12)
+
+Admin login is a **server-side session** behind an `HttpOnly`, `Secure`,
+`SameSite=Strict` cookie, so the app is no longer fully stateless. Two consequences for
+whatever you deploy onto:
+
+- **One instance, or sticky sessions.** The session lives in the container's memory. A
+  second instance behind a round-robin load balancer will bounce the owner back to the
+  login screen roughly half the time. For a single-operator shop one instance is the
+  expected shape; if that ever changes, enable sticky sessions on the target group or
+  move sessions to a shared store. Storefront traffic is unaffected — public requests
+  never get a session at all.
+- **A restart logs the owner out.** Sessions are not persisted across container
+  restarts, so a deploy ends the current admin session. Logging back in is the fix; it
+  is not a bug.
+
+`Secure` is on by default, which means **the cookie will not be sent over plain HTTP**
+from a real domain — a deployment without HTTPS in front of it will look like login
+silently failing. That is the intended behaviour, and HTTPS is A15 regardless. The
+`SESSION_COOKIE_SECURE` escape hatch exists for local experiments only; production must
+never set it to `false`.
+
 ### If the container will not start and the logs say "Refusing to start"
 
 That is `AdminCredentialsValidator` (A13) doing its job, not a bug. The message names
@@ -132,5 +160,4 @@ These are tracked and not yet done:
 - **No automated database backups** configured beyond the manual snapshot above (A15).
 - **No log aggregation or uptime monitoring** wired up (A15). `RequestLoggingFilter`
   already emits a per-request correlation id, so the groundwork exists.
-- **Admin auth sends a reusable password** on every request (A12, pending a decision).
 - **No privacy policy** despite the cart collecting name, phone, email and address (A15).

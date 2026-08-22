@@ -38,8 +38,9 @@ architecture and the engineering decisions behind it.
 
 - **Full-stack ownership** — a typed React 19 SPA talking to a layered Spring Boot REST
   API, with a shared contract enforced through DTOs on both ends.
-- **Secure-by-default API** — stateless HTTP Basic auth, role-based route authorization,
-  BCrypt hashing, CORS locked to known origins, and per-client rate limiting.
+- **Secure-by-default API** — admin sessions behind an `HttpOnly` cookie with CSRF
+  protection, role-based route authorization, BCrypt hashing, CORS locked to known
+  origins, and per-client rate limiting.
 - **Real data engineering** — a normalized PostgreSQL schema evolved through **12 Flyway
   migrations**, versioned in source control, with lazy/batched image loading to avoid N+1
   queries.
@@ -112,7 +113,7 @@ Cross-cutting concerns — security, rate limiting, error mapping, storage — l
 - Optional **GoatCounter** analytics with pageview + conversion events
 
 ### Admin console (authenticated)
-- HTTP Basic login behind guarded React routes
+- Cookie-session login behind guarded React routes
 - Full **product CRUD** with soft-delete, restore, and permanent delete
 - **Inventory & status** management (in stock / out of stock / built on request)
 - **Featured** toggling and **on-sale** management
@@ -135,10 +136,11 @@ Cross-cutting concerns — security, rate limiting, error mapping, storage — l
 | `GET`  | `/sitemap.xml` | Dynamically generated sitemap |
 | `GET`  | `/actuator/health` | Health probe |
 
-**Admin** (HTTP Basic, `ROLE_ADMIN`):
+**Admin** (session cookie, `ROLE_ADMIN`; writes require the `X-XSRF-TOKEN` header):
 
 | Method | Path | Description |
 |--------|------|-------------|
+| `POST`   | `/api/admin/login` · `/api/admin/logout` | Start / end the admin session |
 | `GET`    | `/api/admin/me` · `/api/admin/metrics` | Identity & dashboard metrics |
 | `POST` / `PUT` | `/api/admin/products` · `/{productNumber}` | Create / update product |
 | `PATCH`  | `/api/admin/products/{productNumber}/status` · `/featured` | Update status / featured |
@@ -160,10 +162,12 @@ A few choices I want to call out, with the reasoning:
   Hibernate into in-memory pagination (HHH000104); I made the collection lazy with
   `@BatchSize(30)`, so a full page of products loads its images in one extra query instead
   of N.
-- **Public routes bypass the auth filter.** A custom `shouldNotFilter` on the Basic auth
-  filter lets storefront GETs and review submissions through untouched, so a stale
-  browser-cached credential can never break the public site — while admin routes still go
-  through auth normally.
+- **The admin session is a cookie the page cannot read.** Login exchanges the password
+  for a server-side session behind an `HttpOnly`, `Secure`, `SameSite=Strict` cookie, so
+  an XSS hole in the admin UI steals a revocable session rather than the password itself,
+  and logging out actually revokes it. Cookies are attached by the browser regardless of
+  who asked, so admin writes carry a double-submit CSRF token; the public POSTs are
+  exempt because they carry no credential to borrow.
 - **Rate limiting at the edge.** A Bucket4j filter runs before authentication, throttling
   abusive clients (and brute-force login attempts) before they reach business logic.
 - **DTO-first boundaries.** Entities never leak to the wire; request/response DTOs plus
